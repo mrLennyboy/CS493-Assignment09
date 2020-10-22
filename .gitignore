@@ -3,8 +3,11 @@
 # ignore workspace file
 Assignment-04-ws.code-workspace
 
-# ignore gcloudignore file
-.gcloudignore
+# # ignore gcloudignore file
+# .gcloudignore
+
+# ignore .DS_Store file
+.DS_Store
 
 # ignore python cache dir
 __pycache__/
