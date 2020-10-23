@@ -11,7 +11,7 @@ import constants
 
 
 import boat
-import lodge
+import load
 
 app = Flask(__name__)
 client = datastore.Client()
