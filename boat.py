@@ -50,7 +50,7 @@ def boats_post_get():
             self_url = str(request.base_url) + '/' + str(e.key.id)
             # update new_boat json with id and self url
             e.update({"self": self_url})
-        
+        output = {"boats": results}
         if next_url:
             output["next"] = next_url
         return (json.dumps(output), 200)
