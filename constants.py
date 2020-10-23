@@ -2,7 +2,7 @@ boats = "boats"
 slips = "slips"
 
 # keys for boat response body
-check_keys = {"name", "type", "length"}
+check_keys = {"name", "type", "length", "loads"}
 
 # keys for slip response body
 check_keys_2 = {"number"}
