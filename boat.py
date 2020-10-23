@@ -33,14 +33,27 @@ def boats_post_get():
 
     elif request.method == 'GET':
         query = client.query(kind=constants.boats)
-        results = list(query.fetch())
+        query_limit = int(request.args.get("limit", "2"))
+        query_offset = int(request.args.get("offset", "0"))
+        boat_iterator = query.fetch(limit=query_limit, offset=query_offset)
+        pages = boat_iterator.pages
+        results = list(next(pages))
+        if boat_iterator.next_page_token:
+            next_offset = query_offset + query_limit
+            next_url = request.base_url + "?limit=" + str(query_limit) + "&offset=" + str(next_offset)
+        else:
+            next_url = None
+        
         for e in results:
             e["id"] = e.key.id
              # build self_url from request info and boat entity key id
             self_url = str(request.base_url) + '/' + str(e.key.id)
             # update new_boat json with id and self url
             e.update({"self": self_url})
-        return (json.dumps(results), 200)
+        
+        if next_url:
+            output["next"] = next_url
+        return (json.dumps(output), 200)
     else:
         return 'Method not recogonized'
 
