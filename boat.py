@@ -1,5 +1,5 @@
-from google.cloud import datastore, Blueprint
-from flask import Flask, request
+from google.cloud import datastore
+from flask import Flask, request, Blueprint
 import json
 import constants
 
