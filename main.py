@@ -8,18 +8,12 @@ from google.cloud import datastore
 from flask import Flask, request
 import json
 import constants
-
-
 import boat
 import load
 
 app = Flask(__name__)
-
-client = datastore.Client()
-
-app = Flask(__name__)
-app.register_blueprint(lodging.bp)
-app.register_blueprint(guest.bp)
+app.register_blueprint(boat.bp)
+app.register_blueprint(load.bp)
 client = datastore.Client()
 
 @app.route('/')
