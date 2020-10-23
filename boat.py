@@ -20,7 +20,7 @@ def boats_post_get():
         # creat datastore entity
         new_boat = datastore.entity.Entity(key=client.key(constants.boats))
         new_boat.update({"name": content["name"], "type": content["type"],
-          "length": content["length"]})
+          "length": content["length"], "loads": content["loads"]})
         # put new entity to datastore
         client.put(new_boat)
         
