@@ -14,6 +14,12 @@ import boat
 import load
 
 app = Flask(__name__)
+
+client = datastore.Client()
+
+app = Flask(__name__)
+app.register_blueprint(lodging.bp)
+app.register_blueprint(guest.bp)
 client = datastore.Client()
 
 @app.route('/')
