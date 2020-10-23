@@ -1,6 +1,6 @@
 '''
 Name:   Jasper Wong
-Date:   10-24-2020
+Date:   10-24-2020`
 Source: CS 493 W03 HW, CS CS 493 W04 Ex., Google Cloud Platform docs
 
 '''
@@ -8,6 +8,10 @@ from google.cloud import datastore
 from flask import Flask, request
 import json
 import constants
+
+
+import boat
+import lodge
 
 app = Flask(__name__)
 client = datastore.Client()
