@@ -9,7 +9,7 @@ check_keys = {"name", "type", "length", "loads"}
 check_keys_2 = {"number"}
 
 # keys for loads response body
-check_keys_3 = {"weight", "carrier", "content", "delivery_date"}
+check_keys_3 = {"weight", "content", "delivery_date"}
 
 
 # Errors
