@@ -1,5 +1,6 @@
 boats = "boats"
-slips = "slips"
+slips = "slips" # (from HW03 delete)
+loads = "loads"
 
 # keys for boat response body
 check_keys = {"name", "type", "length", "loads"}
