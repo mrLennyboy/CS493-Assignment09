@@ -24,12 +24,12 @@ def loads_post_get():
         # put new entity to datastore
         client.put(new_load)
         
-        # build self_url from request info and new new_boat entity key id
-        self_url = str(request.base_url) + '/' + str(new_boat.key.id)
-        # update new_boat json with id and self url
-        new_boat.update({"id": new_boat.key.id, "self": self_url})
-        #return tuple of new_boat json string and status code 201
-        return (json.dumps(new_boat), 201)
+        # build self_url from request info and new new_load entity key id
+        self_url = str(request.base_url) + '/' + str(new_load.key.id)
+        # update new_load json with id and self url
+        new_load.update({"id": new_load.key.id, "self": self_url})
+        #return tuple of new_load json string and status code 201
+        return (json.dumps(new_load), 201)
 
     elif request.method == 'GET':
         # pagination by w04 math implementation
@@ -56,7 +56,7 @@ def loads_post_get():
             e["id"] = e.key.id
              # build self_url from request info and boat entity key id
             self_url = str(request.base_url) + '/' + str(e.key.id)
-            # update new_boat json with id and self url
+            # update new_load json with id and self url
             e.update({"self": self_url})
             
         # Add load list to output
