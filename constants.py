@@ -4,8 +4,11 @@ slips = "slips"
 # keys for boat response body
 check_keys = {"name", "type", "length", "loads"}
 
-# keys for slip response body
+# keys for slip response body (from HW03 delete)
 check_keys_2 = {"number"}
+
+# keys for loads response body
+check_keys_3 = {"weight", "carrier", "content", "delivery_date"}
 
 
 # Errors
