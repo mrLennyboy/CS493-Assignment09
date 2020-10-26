@@ -67,6 +67,36 @@ def loads_post_get():
     else:
         return 'Method not recogonized'
 
+@bp.route('/<load_id>', methods=['GET', 'DELETE'])
+def loads_get_delete(load_id):
+    if request.method == 'GET':
+        load_key = client.key(constants.loads, int(load_id))
+        loads = client.get(key=load_key)
+        # if loads entity is nonetype return error message and status code
+        if loads is None:
+            return(json.dumps(constants.error_miss_loadID), 404)
+        # build self_url from request url
+        self_url = str(request.base_url)
+        loads.update({"id": loads.key.id, "self": self_url})
+        results = json.dumps(loads)
+        return (results, 200)
+    
+    elif request.method == 'DELETE':
+        load_key = client.key(constants.loads, int(load_id))
+        # get load entity with the key requested
+        loads = client.get(key=load_key)
+        # if load entity is noneType (id doesn't exist) return error message and status code
+        if loads is None:
+            return (json.dumps(constants.error_miss_loadID), 404)
+        # delete load by id on datastore side
+        client.delete(load_key)
+        #return nothing except 204 status code
+        return ('', 204)
+
+    else:
+        return 'Method not recognoized'
+
+
 # @app.route('/slips', methods=['POST', 'GET'])
 # def slips_post_get():
 #     if request.method == 'POST':

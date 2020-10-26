@@ -39,3 +39,6 @@ error_miss_boat_this_slip = {"Error": "No boat with this boat_id is at the slip 
 
 # boat can't be moored to more than one boat slip
 error_one_boat_slip = {"Error": "The specified boat is already moored at another slip"}
+
+# No load with load #id
+error_miss_loadID = {"Error": "No load with this load_id exists"}
