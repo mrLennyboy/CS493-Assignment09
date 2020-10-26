@@ -13,7 +13,7 @@ check_keys_3 = {"weight", "content", "delivery_date"}
 
 
 # Errors
-# Missing an attribute (boat)
+# Missing an attribute (boat & loads)
 error_miss_attribute = {"Error": "The request object is missing at least one of the required attributes"}
 
 # No boat with boat #id
