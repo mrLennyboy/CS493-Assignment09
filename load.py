@@ -97,6 +97,7 @@ def loads_get_delete(load_id):
         return 'Method not recognoized'
 
 
+
 # @app.route('/slips', methods=['POST', 'GET'])
 # def slips_post_get():
 #     if request.method == 'POST':

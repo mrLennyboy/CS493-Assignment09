@@ -58,7 +58,7 @@ def boats_post_get():
             self_url = str(request.base_url) + '/' + str(e.key.id)
             # update new_boat json with id and self url
             e.update({"self": self_url})
-            
+
         # Add boat list to output
         output = {"boats": results}
         if next_url:
@@ -67,6 +67,7 @@ def boats_post_get():
     else:
         return 'Method not recogonized'
 
+# update code
 @bp.route('/<boat_id>', methods=['GET', 'PATCH', 'DELETE'])
 def boats_get_patch_delete(boat_id):
     if request.method == 'GET':
@@ -78,9 +79,12 @@ def boats_get_patch_delete(boat_id):
 
         self_url = str(request.base_url)
         boats.update({"id": boats.key.id, "self": self_url})
+
+        #also add loads idea to each load dictionary
+        
         results = json.dumps(boats)
         return (results,200)
-
+# update code
     elif request.method =='PATCH':
         content = request.get_json()
         # using comparison operator for key value check, True if all keys present
@@ -104,7 +108,7 @@ def boats_get_patch_delete(boat_id):
         # update edit_boats json with id and self url
         edit_boats.update({"id": edit_boats.key.id, "self": self_url})
         return (json.dumps(edit_boats), 200)
-
+# update code
     elif request.method =='DELETE': # still needs method to make slip empty when boat deleted
         boat_key = client.key(constants.boats, int(boat_id))
         # get boat entity with the key requested
@@ -132,3 +136,66 @@ def boats_get_patch_delete(boat_id):
 
     else:
         return 'Method not recogonized'
+
+@bp.route('/<boat_id>/loads/<load_id>', methods=['PUT', 'DELETE'])
+def boats_loads_put_delete(boat_id, load_id):
+    if request.method == 'PUT':
+        load_key = client.key(constants.loads, int(load_id))
+        loads = client.get(key=load_key)
+
+        boat_key = client.key(constants.boats, int(boat_id))
+        boats = client.get(key=boat_key)
+
+        # if boats or loads entity id doesnt exist return error message and status code
+        if loads is None or boats is None:
+            return (json.dumps(constants.error_miss_load_boat), 404)
+
+        # # if the load entity is already assigned to a boat then return 403 and error
+        elif loads["carrier"] is not None: 
+            return (json.dumps(constants.error_load_already_assigned), 403)
+
+        # # very inefficent method to search boats and prevent multiple same load assignments
+        # query = client.query(kind=constants.boats)
+        # results = list(query.fetch())
+        # for e in results:
+        #     e["id"] = e.key.id
+        #     if e["current_boat"] == int(boat_id):
+        #         return(json.dumps(constants.error_one_boat_slip), 403)
+
+        # add carrier info to load before adding load info to boat
+        # loads.update({"carrier": {"id": boat_id, "name": boats["name"], "self": (str(request.url_root) + "boats/" + boat_id)}})
+        loads.update({"carrier": {"id": boat_id, "name": boats["name"]}})
+        # put update loads entity
+        client.put(loads)
+        # pull loads list from boat
+        temp_list = boats["loads"]
+        # make dictionary of load id and self link, track cargo load on boat
+        # loads_dict = {"id": str(loads.key.id), "self": (str(request.url_root) + "loads/" + load_id)}
+        loads_dict = {"id": str(loads.key.id)}
+        # append dictionary to list
+        temp_list.append(loads_dict)
+        # datastore method update entity loads key
+        boats.update({"loads": temp_list})
+        # put updated boats entity
+        client.put(boats)
+        return ('', 204)
+
+    elif request.method =='DELETE':
+        slip_key = client.key(constants.slips, int(slip_id))
+        slips = client.get(key=slip_key)
+
+        boat_key = client.key(constants.boats, int(boat_id))
+        boats = client.get(key=boat_key)
+
+        if slips is None or boats is None:
+            return (json.dumps(constants.error_miss_boat_this_slip), 404)
+
+        # comparators not combine since datatype error if slips["current_boat"] is first
+        # with invalid slip, unsubscriptable dict value error when nonetype.
+        elif int(boat_id) != slips["current_boat"]:
+            return (json.dumps(constants.error_miss_boat_this_slip), 404)
+
+        # update the slip info for boat leaving the slip
+        slips.update({"current_boat": None})
+        client.put(slips)
+        return ('', 204)

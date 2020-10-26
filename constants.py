@@ -42,3 +42,9 @@ error_one_boat_slip = {"Error": "The specified boat is already moored at another
 
 # No load with load #id
 error_miss_loadID = {"Error": "No load with this load_id exists"}
+
+# Load or boat does not exist
+error_miss_load_boat = {"Error": "The specified boat and/or load does not exist"}
+
+# Load already assigned to a boat
+error_load_already_assigned = {"Error": "The load has already been assigned to a boat"}
