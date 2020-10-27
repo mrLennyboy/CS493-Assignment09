@@ -103,8 +103,6 @@ def loads_get_delete(load_id):
 
         for e in results:
             e["id"] = e.key.id #boat id
-            # #pythonic way to check if list is empty PEP8
-            # if not e["loads"]: 
             # true if list is not empty
             if e["loads"]:
                 for cargo_item in e["loads"]:
@@ -112,16 +110,8 @@ def loads_get_delete(load_id):
                         finder_boat_id = e["id"]
                         boat_key = client.key(constants.boats, int(finder_boat_id))
                         edit_boats = client.get(key=boat_key)
-                        print(edit_boats["loads"])
                         edit_boats["loads"].remove({"id": load_id})
-                        print(edit_boats["loads"])
                         client.put(edit_boats)
-                        print("In if statement if load ==")
-                        # print(cargo_item["id"])
-                        # print(type(cargo_item["id"]))
-                        # print(cargo_item)
-                        # e["loads"].remove({"id": load_id})
-                        # print(e["loads"])
                         break
         #return nothing except 204 status code
         return ('', 204)
