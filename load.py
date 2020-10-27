@@ -27,7 +27,7 @@ def loads_post_get():
         # build self_url from request info and new new_load entity key id
         self_url = str(request.base_url) + '/' + str(new_load.key.id)
         # update new_load json with id and self url
-        new_load.update({"id": new_load.key.id, "self": self_url})
+        new_load.update({"id": str(new_load.key.id), "self": self_url})
         #return tuple of new_load json string and status code 201
         return (json.dumps(new_load), 201)
 
@@ -53,10 +53,10 @@ def loads_post_get():
             next_url = None
         
         for e in results:
-            e["id"] = e.key.id
+            e["id"] = str(e.key.id)
              # build self_url from request info and boat entity key id
-            self_url = str(request.base_url) + '/' + str(e.key.id)
-            # update new_load json with id and self url
+            self_url = str(request.base_url) + '/' + e["id"]
+            # update new_load json with self url
             e.update({"self": self_url})
             
         # Add load list to output
@@ -83,7 +83,7 @@ def loads_get_delete(load_id):
 
         # build self_url from request url
         self_url = str(request.base_url)
-        loads.update({"id": loads.key.id, "self": self_url})
+        loads.update({"id": str(loads.key.id), "self": self_url})
         results = json.dumps(loads)
         return (results, 200)
     

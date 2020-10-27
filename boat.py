@@ -27,7 +27,7 @@ def boats_post_get():
         # build self_url from request info and new new_boat entity key id
         self_url = str(request.base_url) + '/' + str(new_boat.key.id)
         # update new_boat json with id and self url
-        new_boat.update({"id": new_boat.key.id, "self": self_url})
+        new_boat.update({"id": str(new_boat.key.id), "self": self_url})
         #return tuple of new_boat json string and status code 201
         return (json.dumps(new_boat), 201)
 
@@ -57,7 +57,13 @@ def boats_post_get():
              # build self_url from request info and boat entity key id
             self_url = str(request.base_url) + '/' + str(e.key.id)
             # update new_boat json with id and self url
-            e.update({"self": self_url})
+            e.update({"self": self_url, "id": str(e.key.id)})
+            # if true, then list is not empty
+            if e["loads"]:
+                # iterate loads list and adds self
+                for cargo_item in e["loads"]:
+                    self_url_cargo = str(request.url_root) + 'loads/' + cargo_item["id"]
+                    cargo_item.update({"self": self_url_cargo})
 
         # Add boat list to output
         output = {"boats": results}
@@ -81,7 +87,7 @@ def boats_get_patch_delete(boat_id):
                 cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"])})
 
         self_url = str(request.base_url)
-        boats.update({"id": boats.key.id, "self": self_url})
+        boats.update({"id": str(boats.key.id), "self": self_url})
         results = json.dumps(boats)
         return (results,200)
 
@@ -202,7 +208,7 @@ def boats_bid_loads_get(boat_id):
 
                 cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"]),
                     "weight": load_weight, "carrier": load_carrier, "content": load_content,
-                    "delivery_date": load_delivery_date, "id": int(cargo_item["id"])})
+                    "delivery_date": load_delivery_date, "id": cargo_item["id"]})
                 # cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"])})
 
         # Add load list to output
