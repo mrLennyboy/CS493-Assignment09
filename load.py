@@ -96,8 +96,34 @@ def loads_get_delete(load_id):
             return (json.dumps(constants.error_miss_loadID), 404)
         # delete load by id on datastore side
         client.delete(load_key)
+
+        # very inefficent method to search boats and remove load when deleted
+        query = client.query(kind=constants.boats)
+        results = list(query.fetch())
+
+        for e in results:
+            e["id"] = e.key.id #boat id
+            # #pythonic way to check if list is empty PEP8
+            # if not e["loads"]: 
+            # true if list is not empty
+            if e["loads"]:
+                for cargo_item in e["loads"]:
+                    if cargo_item["id"] == load_id:
+                        finder_boat_id = e["id"]
+                        boat_key = client.key(constants.boats, int(finder_boat_id))
+                        edit_boats = client.get(key=boat_key)
+                        print(edit_boats["loads"])
+                        edit_boats["loads"].remove({"id": load_id})
+                        print(edit_boats["loads"])
+                        client.put(edit_boats)
+                        print("In if statement if load ==")
+                        # print(cargo_item["id"])
+                        # print(type(cargo_item["id"]))
+                        # print(cargo_item)
+                        # e["loads"].remove({"id": load_id})
+                        # print(e["loads"])
+                        break
         #return nothing except 204 status code
         return ('', 204)
-
     else:
         return 'Method not recognoized'

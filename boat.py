@@ -120,7 +120,7 @@ def boats_get_patch_delete(boat_id):
         # update edit_boats json with id and self url
         edit_boats.update({"id": edit_boats.key.id, "self": self_url})
         return (json.dumps(edit_boats), 200)
-# update code
+
     elif request.method =='DELETE':
         boat_key = client.key(constants.boats, int(boat_id))
         # get boat entity with the key requested
@@ -132,7 +132,7 @@ def boats_get_patch_delete(boat_id):
         client.delete(boat_key)
 
         # write method to search different load carrier data and remove it
-        # very inefficent method to search slips and remove boat when deleted
+        # very inefficent method to search loads and remove boat when deleted
         query = client.query(kind=constants.loads)
         results = list(query.fetch())
         # print(results)
