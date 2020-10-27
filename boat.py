@@ -256,3 +256,41 @@ def boats_loads_put_delete(boat_id, load_id):
         boats.update({"loads": []})
         client.put(boats)
         return ('', 204)
+
+@bp.route('/<boat_id>/loads', methods=['GET'])
+def boats_bid_loads_get(boat_id):
+    if request.method == 'GET':
+        boat_key = client.key(constants.boats, int(boat_id))
+        boats = client.get(key=boat_key)
+        # if boats entity is nonetype return error message and status code
+        if boats is None:
+            return (json.dumps(constants.error_miss_bID), 404)
+
+        if 'loads' in boats.keys(): # <-- does this do anything for check of boat.keys(), orig. check empty list I think
+            for cargo_item in boats["loads"]:
+                # call load entity each time since I'll get the id when I iterate
+                # print(cargo_item["id"])
+                # not needed anymore, using id and self only for consistency
+                load_key = client.key(constants.loads, int(cargo_item["id"]))
+                loads = client.get(key=load_key)
+                load_weight = loads["weight"]
+                load_carrier = loads["carrier"]
+                load_content =  loads["content"]
+                load_delivery_date = loads["delivery_date"]
+                # load_id_int = int(cargo_item["id"])
+                cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"]),
+                    "weight": load_weight, "carrier": load_carrier, "content": load_content,
+                    "delivery_date": load_delivery_date, "id": int(cargo_item["id"])})
+                # cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"])})
+
+
+        # self_url = str(request.base_url)
+        # boats.update({"id": boats.key.id, "self": self_url})
+
+        # results = json.dumps(boats)
+        # Add load list to output
+        boat_load = {"loads": boats["loads"]}
+
+        # boat_load = json.dumps(boats["loads"])
+
+        return (boat_load,200)
