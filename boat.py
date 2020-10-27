@@ -77,11 +77,23 @@ def boats_get_patch_delete(boat_id):
         if boats is None:
             return (json.dumps(constants.error_miss_bID), 404)
 
+        # add self links to load items
+        load_list =[]
+
+        if 'loads' in boats.keys():
+            for cargo_item in boats["loads"]:
+                # print(boats['loads'])
+                # print(type(boats["loads"]))
+                # print(cargo_item)
+                # print(cargo_item["id"])
+                cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"])})
+                # print(cargo_item)
+
         self_url = str(request.base_url)
         boats.update({"id": boats.key.id, "self": self_url})
 
         #also add loads idea to each load dictionary
-        
+
         results = json.dumps(boats)
         return (results,200)
 # update code
@@ -169,11 +181,14 @@ def boats_loads_put_delete(boat_id, load_id):
         client.put(loads)
         # pull loads list from boat
         temp_list = boats["loads"]
+        print(type(temp_list)) # <-- test class list
         # make dictionary of load id and self link, track cargo load on boat
         # loads_dict = {"id": str(loads.key.id), "self": (str(request.url_root) + "loads/" + load_id)}
-        loads_dict = {"id": str(loads.key.id)}
+        loads_dict = {"id": load_id}
+        print(type(loads_dict)) # <-- test class dict
         # append dictionary to list
         temp_list.append(loads_dict)
+        print(type(temp_list)) # <-- test class list
         # datastore method update entity loads key
         boats.update({"loads": temp_list})
         # put updated boats entity

@@ -75,6 +75,12 @@ def loads_get_delete(load_id):
         # if loads entity is nonetype return error message and status code
         if loads is None:
             return(json.dumps(constants.error_miss_loadID), 404)
+
+        # if 'carrier' not loads.keys():
+        if loads["carrier"] is not None:
+            # print(loads["carrier"])
+            loads["carrier"].update({"self": (str(request.url_root) + "boats/" + loads["carrier"]["id"])})
+
         # build self_url from request url
         self_url = str(request.base_url)
         loads.update({"id": loads.key.id, "self": self_url})
