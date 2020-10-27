@@ -121,7 +121,7 @@ def boats_get_patch_delete(boat_id):
         edit_boats.update({"id": edit_boats.key.id, "self": self_url})
         return (json.dumps(edit_boats), 200)
 # update code
-    elif request.method =='DELETE': # still needs method to make slip empty when boat deleted
+    elif request.method =='DELETE':
         boat_key = client.key(constants.boats, int(boat_id))
         # get boat entity with the key requested
         boats = client.get(key=boat_key)
@@ -131,19 +131,31 @@ def boats_get_patch_delete(boat_id):
 
         client.delete(boat_key)
 
+        # write method to search different load carrier data and remove it
         # very inefficent method to search slips and remove boat when deleted
-        query = client.query(kind=constants.slips)
+        query = client.query(kind=constants.loads)
         results = list(query.fetch())
+        # print(results)
+        # print(type(results))
         for e in results:
             e["id"] = e.key.id
-            if e["current_boat"] == int(boat_id):
-                finder_slip_id = e["id"]
-                # once current boat found in slip and id obtained get slip entity to update
-                slip_key = client.key(constants.slips, int(finder_slip_id))
-                edit_slips = client.get(key=slip_key)
-                edit_slips.update({"current_boat": None}) 
-                client.put(edit_slips)
-                break
+            # print(e)
+            # print("divide---------------------->")
+            if e["carrier"] is not None:
+                # print("eCarrier is not None")
+                # print(e["carrier"]["id"])
+                # print(type(e["carrier"]["id"]))
+                if e["carrier"]["id"] == boat_id:
+                    # print("--carrier id and boat id matches")
+                    # print(e["carrier"]["id"])
+                # if e["carrier"]["id"] == int(boat_id):
+                    finder_load_id = e["id"]
+                    # once current boat found in carrier info and id obtained get load entity to update
+                    load_key = client.key(constants.loads, int(finder_load_id))
+                    edit_loads = client.get(key=load_key)
+                    edit_loads.update({"carrier": None}) 
+                    client.put(edit_loads)
+                    break
         return ('', 204)
 
     else:
@@ -206,18 +218,8 @@ def boats_loads_put_delete(boat_id, load_id):
         if loads is None or boats is None:
             return (json.dumps(constants.error_miss_load_boat), 404)
 
-        # comparators not combine since datatype error if slips["current_boat"] is first
-        # with invalid slip, unsubscriptable dict value error when nonetype. # <-- delete?
-        # make equivalent for remove load from boat
-
-        # print(type(boat_id))
-        # print(type(loads["carrier"]["id"]))
-        # check if boat_id matches carrier id in load
-        elif boat_id != loads["carrier"]["id"]:
-            return (json.dumps(constants.error_miss_boat_load_del), 404)
-        
         # if no load id matches in boat cargo then throw error
-        if 'loads' in boats.keys():
+        elif 'loads' in boats.keys():
             load_count = 0
             boat_key_num = len(boats["loads"])
             # print(boat_key_num)
@@ -230,6 +232,21 @@ def boats_loads_put_delete(boat_id, load_id):
             # print(boat_key_num)
             if load_count >= boat_key_num:
                 return (json.dumps(constants.error_miss_load_boat_del), 404)
+
+        # comparators not combine since datatype error if slips["current_boat"] is first
+        # with invalid slip, unsubscriptable dict value error when nonetype. # <-- delete?
+        # make equivalent for remove load from boat
+
+        # elif load_id != boats["carrier"]["id"]:
+        #     return (json.dumps(constants.error_miss_boat_load_del), 404)
+        print(type(boat_id))
+        print(boat_id)
+        # print(type(loads["carrier"]["id"]))
+        print(loads["carrier"])
+        # check if boat_id matches carrier id in load,
+        # TypeError: 'NoneType' object is not subscriptable
+        if boat_id != loads["carrier"]["id"]:
+            return (json.dumps(constants.error_miss_boat_load_del), 404)
 
         # update load information and remove carrier info
         loads.update({"carrier": None})
