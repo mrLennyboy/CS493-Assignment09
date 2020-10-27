@@ -48,3 +48,9 @@ error_miss_load_boat = {"Error": "The specified boat and/or load does not exist"
 
 # Load already assigned to a boat
 error_load_already_assigned = {"Error": "The load has already been assigned to a boat"}
+
+# The boat data does not match load carrier data for removal
+error_miss_boat_load_del = {"Error": "No boat with this boat_id is carrying this load with this load_id"}
+
+# The load data does not match boat data for removal
+error_miss_load_boat_del = {"Error": "No load with this load_id is associated with the boat and this boat_id"}

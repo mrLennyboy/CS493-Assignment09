@@ -78,7 +78,7 @@ def boats_get_patch_delete(boat_id):
             return (json.dumps(constants.error_miss_bID), 404)
 
         # add self links to load items
-        load_list =[]
+        # load_list =[]
 
         if 'loads' in boats.keys():
             for cargo_item in boats["loads"]:
@@ -158,7 +158,7 @@ def boats_loads_put_delete(boat_id, load_id):
         boat_key = client.key(constants.boats, int(boat_id))
         boats = client.get(key=boat_key)
 
-        # if boats or loads entity id doesnt exist return error message and status code
+        # if boats or loads entity  doesnt exist return error message and status code
         if loads is None or boats is None:
             return (json.dumps(constants.error_miss_load_boat), 404)
 
@@ -196,21 +196,46 @@ def boats_loads_put_delete(boat_id, load_id):
         return ('', 204)
 
     elif request.method =='DELETE':
-        slip_key = client.key(constants.slips, int(slip_id))
-        slips = client.get(key=slip_key)
+        load_key = client.key(constants.loads, int(load_id))
+        loads = client.get(key=load_key)
 
         boat_key = client.key(constants.boats, int(boat_id))
         boats = client.get(key=boat_key)
 
-        if slips is None or boats is None:
-            return (json.dumps(constants.error_miss_boat_this_slip), 404)
+        # if boats or loads entity  doesnt exist return error message and status code
+        if loads is None or boats is None:
+            return (json.dumps(constants.error_miss_load_boat), 404)
 
         # comparators not combine since datatype error if slips["current_boat"] is first
-        # with invalid slip, unsubscriptable dict value error when nonetype.
-        elif int(boat_id) != slips["current_boat"]:
-            return (json.dumps(constants.error_miss_boat_this_slip), 404)
+        # with invalid slip, unsubscriptable dict value error when nonetype. # <-- delete?
+        # make equivalent for remove load from boat
 
-        # update the slip info for boat leaving the slip
-        slips.update({"current_boat": None})
-        client.put(slips)
+        # print(type(boat_id))
+        # print(type(loads["carrier"]["id"]))
+        # check if boat_id matches carrier id in load
+        elif boat_id != loads["carrier"]["id"]:
+            return (json.dumps(constants.error_miss_boat_load_del), 404)
+        
+        # if no load id matches in boat cargo then throw error
+        if 'loads' in boats.keys():
+            load_count = 0
+            boat_key_num = len(boats["loads"])
+            # print(boat_key_num)
+            for cargo_item in boats["loads"]:
+                # print(load_id)
+                # print(cargo_item["id"])
+                if int(load_id) != cargo_item["id"]:
+                    load_count+1
+            # print(load_count)
+            # print(boat_key_num)
+            if load_count >= boat_key_num:
+                return (json.dumps(constants.error_miss_load_boat_del), 404)
+
+        # update load information and remove carrier info
+        loads.update({"carrier": None})
+        client.put(loads)
+
+        # update the boat info when load removed the boat
+        boats.update({"loads": []})
+        client.put(boats)
         return ('', 204)
