@@ -197,7 +197,8 @@ def boats_bid_loads_get(boat_id):
         if boats is None:
             return (json.dumps(constants.error_miss_bID), 404)
 
-        if 'loads' in boats.keys(): # <-- does this do anything for check of boat.keys(), orig. check empty list I think
+        #check if loads key is in boats, true if key is not empty.
+        if 'loads' in boats.keys():
             for cargo_item in boats["loads"]:
                 load_key = client.key(constants.loads, int(cargo_item["id"]))
                 loads = client.get(key=load_key)
