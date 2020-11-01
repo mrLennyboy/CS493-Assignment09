@@ -104,27 +104,10 @@ def boats_get_delete_patch_put(boat_id):
             return (json.dumps(constants.error_miss_bID), 404)
 
         client.delete(boat_key)
-
-        # write method to search different load carrier data and remove it
-        # very inefficent method to search loads and remove boat when deleted
-        query = client.query(kind=constants.loads)
-        results = list(query.fetch())
-        for e in results:
-            e["id"] = e.key.id
-            if e["carrier"] is not None:
-                if e["carrier"]["id"] == boat_id:
-                    finder_load_id = e["id"]
-                    # once current boat found in carrier info and id obtained, get load entity to update
-                    load_key = client.key(constants.loads, int(finder_load_id))
-                    edit_loads = client.get(key=load_key)
-                    edit_loads.update({"carrier": None}) 
-                    client.put(edit_loads)
-                    break
         return ('', 204)
 
     elif request.method == 'PATCH':
         content = request.get_json()
-
         # iterate throguh content keys to check if there are matchs to constant keys
         # increament for tracking and append to list
         key_match_count = 0
