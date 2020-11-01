@@ -14,7 +14,7 @@ import load
 app = Flask(__name__)
 # register blueprints on application
 app.register_blueprint(boat.bp)
-app.register_blueprint(load.bp) # don't need it for this assignment
+
 client = datastore.Client()
 
 @app.route('/')
