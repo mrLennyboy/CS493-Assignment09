@@ -9,7 +9,6 @@ from flask import Flask, request
 import json
 import constants
 import boat
-import load
 
 app = Flask(__name__)
 # register blueprints on application
