@@ -125,7 +125,8 @@ def boats_get_delete_patch_put(boat_id):
     elif request.method == 'PATCH':
         content = request.get_json()
 
-        
+        # iterate throguh content keys to check if there are matchs to constant keys
+        # increament for tracking and append to list
         key_match_count = 0
         key_match_list = []
         for key_check in content.keys():
