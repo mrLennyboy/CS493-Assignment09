@@ -124,10 +124,19 @@ def boats_get_delete_patch_put(boat_id):
 
     elif request.method == 'PATCH':
         content = request.get_json()
-        # is this necessary for PATCH since input does not to have all attribute keys?
-        # do I need to error out if more than 3 attributes in input body
-        # using comparison operator for key value check, True if all keys present
-        if not (content.keys()) >= constants.check_keys:
+
+        
+        key_match_count = 0
+        key_match_list = []
+        for key_check in content.keys():
+            # print(key_check)
+            # print(type(key_check))
+            # print("TOMMMATTTTOOOO")
+            if key_check in constants.check_keys:
+                key_match_count += 1
+                key_match_list.append(key_check)
+        # return error if there are no key value matches for PATCH
+        if key_match_count == 0:
             return (json.dumps(constants.error_miss_attribute), 400)
 
         boat_key = client.key(constants.boats, int(boat_id))
@@ -138,15 +147,10 @@ def boats_get_delete_patch_put(boat_id):
             return (json.dumps(constants.error_miss_bID), 404)
         
         # Add entity comparator to check what subset of attributes changed
-        # update entity values with lots of if statements
-        if edit_boats["name"] != content["name"]:
-            edit_boats.update({"name": content["name"]})
-
-        if edit_boats["type"] != content["type"]:
-            edit_boats.update({"type": content["type"]})
-
-        if edit_boats["length"] != content["length"]:
-            edit_boats.update({"length": content["length"]})
+        # update entity values with for loop and if statement that iterates throguh list
+        for value_check in key_match_list:
+            if edit_boats[value_check] != content[value_check]:
+                edit_boats.update({value_check: content[value_check]})
 
         # update existing entity as put to datastore
         client.put(edit_boats)
