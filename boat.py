@@ -20,7 +20,7 @@ def boats_post_get():
         # creat datastore entity
         new_boat = datastore.entity.Entity(key=client.key(constants.boats))
         new_boat.update({"name": content["name"], "type": content["type"],
-          "length": content["length"], "loads": content["loads"]})
+          "length": content["length"]})
         # put new entity to datastore
         client.put(new_boat)
         
@@ -58,12 +58,6 @@ def boats_post_get():
             self_url = str(request.base_url) + '/' + str(e.key.id)
             # update new_boat json with id and self url
             e.update({"self": self_url, "id": str(e.key.id)})
-            # if true, then list is not empty
-            if e["loads"]:
-                # iterate loads list and adds self
-                for cargo_item in e["loads"]:
-                    self_url_cargo = str(request.url_root) + 'loads/' + cargo_item["id"]
-                    cargo_item.update({"self": self_url_cargo})
 
         # Add boat list to output
         output = {"boats": results}
@@ -73,8 +67,8 @@ def boats_post_get():
     else:
         return 'Method not recogonized'
 
-@bp.route('/<boat_id>', methods=['GET', 'DELETE'])
-def boats_get_patch_delete(boat_id):
+@bp.route('/<boat_id>', methods=['GET', 'DELETE', 'PATCH', 'PUT'])
+def boats_get_delete_patch_put(boat_id):
     if request.method == 'GET':
         boat_key = client.key(constants.boats, int(boat_id))
         boats = client.get(key=boat_key)
@@ -118,100 +112,60 @@ def boats_get_patch_delete(boat_id):
                     break
         return ('', 204)
 
-    else:
-        return 'Method not recogonized'
-
-@bp.route('/<boat_id>/loads/<load_id>', methods=['PUT', 'DELETE'])
-def boats_loads_put_delete(boat_id, load_id):
-    if request.method == 'PUT':
-        load_key = client.key(constants.loads, int(load_id))
-        loads = client.get(key=load_key)
+    elif request.method == 'PATCH':
+        content = request.get_json()
+        # using comparison operator for key value check, True if all keys present
+        if not (content.keys()) >= constants.check_keys:
+            return (json.dumps(constants.error_miss_attribute), 400)
 
         boat_key = client.key(constants.boats, int(boat_id))
-        boats = client.get(key=boat_key)
-
-        # if boats or loads entity  doesnt exist return error message and status code
-        if loads is None or boats is None:
-            return (json.dumps(constants.error_miss_load_boat), 404)
-
-        # if the load entity is already assigned to a boat then return 403 and error
-        elif loads["carrier"] is not None: 
-            return (json.dumps(constants.error_load_already_assigned), 403)
-
-        loads.update({"carrier": {"id": boat_id, "name": boats["name"]}})
-        # put update loads entity
-        client.put(loads)
-        # pull loads list from boat
-        temp_list = boats["loads"]
-        loads_dict = {"id": load_id}
-        # append dictionary to list
-        temp_list.append(loads_dict)
-        # datastore method update entity loads key
-        boats.update({"loads": temp_list})
-        # put updated boats entity
-        client.put(boats)
-        return ('', 204)
-
-    elif request.method =='DELETE':
-        load_key = client.key(constants.loads, int(load_id))
-        loads = client.get(key=load_key)
-
-        boat_key = client.key(constants.boats, int(boat_id))
-        boats = client.get(key=boat_key)
-
-        # if boats or loads entity  doesnt exist return error message and status code
-        if loads is None or boats is None:
-            return (json.dumps(constants.error_miss_load_boat), 404)
-
-        # if no load id matches in boat cargo then throw error
-        elif 'loads' in boats.keys():
-            load_count = 0
-            boat_key_num = len(boats["loads"])
-            for cargo_item in boats["loads"]:
-                if int(load_id) != cargo_item["id"]:
-                    load_count+1
-
-            if load_count >= boat_key_num:
-                return (json.dumps(constants.error_miss_load_boat_del), 404)
-
-        # check if boat_id matches carrier id in load,
-        # TypeError: 'NoneType' object is not subscriptable
-        if boat_id != loads["carrier"]["id"]:
-            return (json.dumps(constants.error_miss_boat_load_del), 404)
-
-        # update load information and remove carrier info
-        loads.update({"carrier": None})
-        client.put(loads)
-
-        # update the boat info when load removed the boat
-        boats.update({"loads": []})
-        client.put(boats)
-        return ('', 204)
-
-@bp.route('/<boat_id>/loads', methods=['GET'])
-def boats_bid_loads_get(boat_id):
-    if request.method == 'GET':
-        boat_key = client.key(constants.boats, int(boat_id))
-        boats = client.get(key=boat_key)
+        # print(boat_key)
+        edit_boats = client.get(key=boat_key)
         # if boats entity is nonetype return error message and status code
-        if boats is None:
+        if edit_boats is None:
+            return (json.dumps(constants.error_miss_bID), 404)
+        
+        # Add entity comparator to check what subset of attributes changed
+        # update entity values with lots of if statements
+        if edit_boats["name"] != content["name"]:
+            edit_boats.update({"name": content["name"]})
+
+        if edit_boats["type"] != content["type"]:
+            edit_boats.update({"type": content["type"]})
+
+        if edit_boats["length"] != content["length"]:
+            edit_boats.update({"length": content["length"]})
+
+        # update existing entity as put to datastore
+        client.put(edit_boats)
+        # build self_url from request info
+        self_url = str(request.base_url)
+        # update edit_boats json with id and self url
+        edit_boats.update({"id": edit_boats.key.id, "self": self_url})
+        return (json.dumps(edit_boats), 200)
+
+    elif request.method == 'PUT':
+        content = request.get_json()
+        # using comparison operator for key value check, True if all keys present
+        if not (content.keys()) >= constants.check_keys:
+            return (json.dumps(constants.error_miss_attribute), 400)
+
+        boat_key = client.key(constants.boats, int(boat_id))
+        # print(boat_key)
+        edit_boats = client.get(key=boat_key)
+        # if boats entity is nonetype return error message and status code
+        if edit_boats is None:
             return (json.dumps(constants.error_miss_bID), 404)
 
-        #check if loads key is in boats, true if key is not empty.
-        if 'loads' in boats.keys():
-            for cargo_item in boats["loads"]:
-                load_key = client.key(constants.loads, int(cargo_item["id"]))
-                loads = client.get(key=load_key)
-                load_weight = loads["weight"]
-                load_carrier = loads["carrier"]
-                load_content =  loads["content"]
-                load_delivery_date = loads["delivery_date"]
-
-                cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"]),
-                    "weight": load_weight, "carrier": load_carrier, "content": load_content,
-                    "delivery_date": load_delivery_date, "id": cargo_item["id"]})
-                # cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"])})
-
-        # Add load list to output
-        boat_load = {"loads": boats["loads"]}
-        return (boat_load,200)
+        # update entity values
+        edit_boats.update({"name": content["name"], "type": content["type"],
+          "length": content["length"]})
+        # update existing entity as put to datastore
+        client.put(edit_boats)
+        # build self_url from request info
+        self_url = str(request.base_url)
+        # update edit_boats json with id and self url
+        edit_boats.update({"id": edit_boats.key.id, "self": self_url})
+        return (json.dumps(edit_boats), 200)
+    else:
+        return 'Method not recogonized'

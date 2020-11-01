@@ -2,7 +2,7 @@ boats = "boats"
 loads = "loads"
 
 # keys for boat response body
-check_keys = {"name", "type", "length", "loads"}
+check_keys = {"name", "type", "length"}
 
 # keys for loads response body
 check_keys_3 = {"weight", "content", "delivery_date"}

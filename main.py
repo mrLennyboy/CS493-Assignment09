@@ -1,7 +1,7 @@
 '''
 Name:   Jasper Wong
-Date:   10-27-2020`
-Source: CS 493 W03 & W02 HW, CS CS 493 W04 Ex., Google Cloud Platform docs
+Date:   10-30-2020`
+Source: CS 493 W03 & W02 HW, CS CS 493 W04, Google Cloud Platform docs
 
 '''
 from google.cloud import datastore
@@ -14,7 +14,7 @@ import load
 app = Flask(__name__)
 # register blueprints on application
 app.register_blueprint(boat.bp)
-app.register_blueprint(load.bp)
+app.register_blueprint(load.bp) # don't need it for this assignment
 client = datastore.Client()
 
 @app.route('/')
