@@ -10,3 +10,6 @@ error_miss_attribute = {"Error": "The request object is missing at least one of 
 
 # No boat with boat #id
 error_miss_bID = {"Error": "No boat with this boat_id exists"}
+
+# Boat with name already exists
+error_boat_name_exists = {"Error": "This boat name already exists"}

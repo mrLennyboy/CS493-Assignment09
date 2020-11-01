@@ -1,5 +1,5 @@
 from google.cloud import datastore
-from flask import Flask, request, Blueprint
+from flask import Flask, request, Blueprint, make_response
 import json
 import constants
 
@@ -17,8 +17,18 @@ def boats_post_get():
         if not (content.keys()) >= constants.check_keys:
             return (json.dumps(constants.error_miss_attribute), 400)
 
-        # creat datastore entity
+        # check boat name if unique or not
+        query = client.query(kind=constants.boats)
+        results = list(query.fetch())
+        for e in results:
+            # if the boat name is already assigned to a boat then return 403 and error
+            if e["name"] == content["name"]:
+                return (json.dumps(constants.error_boat_name_exists), 403)
+
+        # create datastore entity
         new_boat = datastore.entity.Entity(key=client.key(constants.boats))
+
+        # Update new entity with content data
         new_boat.update({"name": content["name"], "type": content["type"],
           "length": content["length"]})
         # put new entity to datastore
@@ -114,6 +124,8 @@ def boats_get_delete_patch_put(boat_id):
 
     elif request.method == 'PATCH':
         content = request.get_json()
+        # is this necessary for PATCH since input does not to have all attribute keys?
+        # do I need to error out if more than 3 attributes in input body
         # using comparison operator for key value check, True if all keys present
         if not (content.keys()) >= constants.check_keys:
             return (json.dumps(constants.error_miss_attribute), 400)
