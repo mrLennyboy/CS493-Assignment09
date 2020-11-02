@@ -2,6 +2,7 @@ from google.cloud import datastore
 from flask import Flask, request, Blueprint, make_response
 import json
 import constants
+from json2html import *
 
 client = datastore.Client()
 
@@ -12,36 +13,52 @@ bp = Blueprint('boat', __name__, url_prefix='/boats')
 @bp.route('', methods=['POST','GET'])
 def boats_post_get():
     if request.method == 'POST':
-        content = request.get_json()
-        # using comparison operator for key value check, True if all keys present
-        if not (content.keys()) >= constants.check_keys:
-            return (json.dumps(constants.error_miss_attribute), 400)
+        # check to see if application/json is listed in Accept header
+        if 'application/json' in request.accept_mimetypes:
+            # check if request is json
+            if not request.is_json:
+                # return simple status code for unsupported media type (want JSON)
+                return (json.dumps(constants.error_unsupported_media_type), 415)
 
-        # check boat name if unique or not
-        query = client.query(kind=constants.boats)
-        results = list(query.fetch())
-        for e in results:
-            # if the boat name is already assigned to a boat then return 403 and error
-            if e["name"] == content["name"]:
-                return (json.dumps(constants.error_boat_name_exists), 403)
+            content = request.get_json()
+            # using comparison operator for key value check, True if all keys present
+            if not (content.keys()) >= constants.check_keys:
+                return (json.dumps(constants.error_miss_attribute), 400)
 
-        # create datastore entity
-        new_boat = datastore.entity.Entity(key=client.key(constants.boats))
+            # check boat name if unique or not
+            query = client.query(kind=constants.boats)
+            results = list(query.fetch())
+            for e in results:
+                # if the boat name is already assigned to a boat then return 403 and error
+                if e["name"] == content["name"]:
+                    return (json.dumps(constants.error_boat_name_exists), 403)
 
-        # Update new entity with content data
-        new_boat.update({"name": content["name"], "type": content["type"],
-          "length": content["length"]})
-        # put new entity to datastore
-        client.put(new_boat)
-        
-        # build self_url from request info and new new_boat entity key id
-        self_url = str(request.base_url) + '/' + str(new_boat.key.id)
-        # update new_boat json with id and self url
-        new_boat.update({"id": str(new_boat.key.id), "self": self_url})
-        #return tuple of new_boat json string and status code 201
-        return (json.dumps(new_boat), 201)
+            # create datastore entity
+            new_boat = datastore.entity.Entity(key=client.key(constants.boats))
 
-    elif request.method == 'GET':
+            # Update new entity with content data
+            new_boat.update({"name": content["name"], "type": content["type"],
+            "length": content["length"]})
+            # put new entity to datastore
+            client.put(new_boat)
+            
+            # build self_url from request info and new new_boat entity key id
+            self_url = str(request.base_url) + '/' + str(new_boat.key.id)
+            # update new_boat json with id and self url
+            new_boat.update({"id": str(new_boat.key.id), "self": self_url})
+            # setting status code and content-type type with make_response function
+            res = make_response(json.dumps(new_boat))
+            res.mimetype = 'application/json'
+            res.status_code = 201
+            # print(res.mimetype)
+            return res
+
+        else: #else statement for request.accept_mimetype
+            # return "This client doesn't accept application/json"
+            return (json.dumps(constants.error_unsupported_accept_type), 406)
+
+
+    elif request.method == 'GET': # GET ALL, not part of spec so beginner functions instead of adv.
         # pagination by w04 math implementation
         query = client.query(kind=constants.boats)
         # pull limit and offset from argument of url, if none use 3 and 0.
@@ -109,7 +126,7 @@ def boats_get_delete_patch_put(boat_id):
     elif request.method == 'PATCH':
         content = request.get_json()
         # iterate throguh content keys to check if there are matchs to constant keys
-        # increament for tracking and append to list
+        # increament for tracking and append to list. Ignoring race conditions of duplicate keys
         key_match_count = 0
         key_match_list = []
         for key_check in content.keys():
@@ -136,6 +153,15 @@ def boats_get_delete_patch_put(boat_id):
             if edit_boats[value_check] != content[value_check]:
                 edit_boats.update({value_check: content[value_check]})
 
+        # check boat name if unique or not
+        if "name" in content.keys():
+            query = client.query(kind=constants.boats)
+            results = list(query.fetch())
+            for e in results:
+                # if the boat name is already assigned to a boat then return 403 and error
+                if e["name"] == content["name"]:
+                    return (json.dumps(constants.error_boat_name_exists), 403)
+
         # update existing entity as put to datastore
         client.put(edit_boats)
         # build self_url from request info
@@ -156,6 +182,15 @@ def boats_get_delete_patch_put(boat_id):
         # if boats entity is nonetype return error message and status code
         if edit_boats is None:
             return (json.dumps(constants.error_miss_bID), 404)
+
+        # check boat name if unique or not
+        if "name" in content.keys():
+            query = client.query(kind=constants.boats)
+            results = list(query.fetch())
+            for e in results:
+                # if the boat name is already assigned to a boat then return 403 and error
+                if e["name"] == content["name"]:
+                    return (json.dumps(constants.error_boat_name_exists), 403)
 
         # update entity values
         edit_boats.update({"name": content["name"], "type": content["type"],
