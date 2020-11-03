@@ -97,20 +97,43 @@ def boats_post_get():
 @bp.route('/<boat_id>', methods=['GET', 'DELETE', 'PATCH', 'PUT'])
 def boats_get_delete_patch_put(boat_id):
     if request.method == 'GET':
-        boat_key = client.key(constants.boats, int(boat_id))
-        boats = client.get(key=boat_key)
-        # if boats entity is nonetype return error message and status code
-        if boats is None:
-            return (json.dumps(constants.error_miss_bID), 404)
+        # check to see if application/json is listed in Accept header
+        if ('text/html' in request.accept_mimetypes) or ('application/json' in request.accept_mimetypes) :
+            # # check if request is json
+            # if not request.is_json:
+            #     # return simple status code for unsupported media type (want JSON)
+            #     return (json.dumps(constants.error_unsupported_media_type), 415)
 
-        if 'loads' in boats.keys():
-            for cargo_item in boats["loads"]:
-                cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"])})
+            boat_key = client.key(constants.boats, int(boat_id))
+            boats = client.get(key=boat_key)
+            # if boats entity is nonetype return error message and status code
+            if boats is None:
+                return (json.dumps(constants.error_miss_bID), 404)
 
-        self_url = str(request.base_url)
-        boats.update({"id": str(boats.key.id), "self": self_url})
-        results = json.dumps(boats)
-        return (results,200)
+            if 'loads' in boats.keys():
+                for cargo_item in boats["loads"]:
+                    cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"])})
+
+            self_url = str(request.base_url)
+            boats.update({"id": str(boats.key.id), "self": self_url})
+            # results = json.dumps(boats)
+
+            if 'text/html' in request.accept_mimetypes:
+                # source w05 lectures setting headers and json2html module
+                res = make_response(json2html.convert(json=json.dumps(boats)))
+                res.headers.set('Content-Type', 'text/html')
+                res.status_code = 200
+                return res
+            else:
+                # setting status code and content-type type with make_response function
+                res = make_response(json.dumps(boats))
+                res.mimetype = 'application/json'
+                res.status_code = 200
+                return res
+
+        else: #else statement for request.accept_mimetype
+            # return "This client doesn't accept application/json"
+            return (json.dumps(constants.error_unsupported_accept_type), 406)
 
     elif request.method =='DELETE':
         boat_key = client.key(constants.boats, int(boat_id))
@@ -124,83 +147,118 @@ def boats_get_delete_patch_put(boat_id):
         return ('', 204)
 
     elif request.method == 'PATCH':
-        content = request.get_json()
-        # iterate throguh content keys to check if there are matchs to constant keys
-        # increament for tracking and append to list. Ignoring race conditions of duplicate keys
-        key_match_count = 0
-        key_match_list = []
-        for key_check in content.keys():
-            # print(key_check)
-            # print(type(key_check))
-            # print("TOMMMATTTTOOOO")
-            if key_check in constants.check_keys:
-                key_match_count += 1
-                key_match_list.append(key_check)
-        # return error if there are no key value matches for PATCH
-        if key_match_count == 0:
-            return (json.dumps(constants.error_miss_attribute), 400)
+        # check to see if application/json is listed in Accept header
+        if 'application/json' in request.accept_mimetypes:
+            # check if request is json
+            if not request.is_json:
+                # return simple status code for unsupported media type (want JSON)
+                return (json.dumps(constants.error_unsupported_media_type), 415)
 
-        boat_key = client.key(constants.boats, int(boat_id))
-        # print(boat_key)
-        edit_boats = client.get(key=boat_key)
-        # if boats entity is nonetype return error message and status code
-        if edit_boats is None:
-            return (json.dumps(constants.error_miss_bID), 404)
-        
-        # Add entity comparator to check what subset of attributes changed
-        # update entity values with for loop and if statement that iterates throguh list
-        for value_check in key_match_list:
-            if edit_boats[value_check] != content[value_check]:
-                edit_boats.update({value_check: content[value_check]})
+            content = request.get_json()
+            # iterate throguh content keys to check if there are matchs to constant keys
+            # increament for tracking and append to list. Ignoring race conditions of duplicate keys
+            key_match_count = 0
+            key_match_list = []
+            for key_check in content.keys():
+                # print(key_check)
+                # print(type(key_check))
+                # print("TOMMMATTTTOOOO")
+                if key_check in constants.check_keys:
+                    key_match_count += 1
+                    key_match_list.append(key_check)
+            # return error if there are no key value matches for PATCH
+            if key_match_count == 0:
+                return (json.dumps(constants.error_miss_attribute), 400)
 
-        # check boat name if unique or not
-        if "name" in content.keys():
-            query = client.query(kind=constants.boats)
-            results = list(query.fetch())
-            for e in results:
-                # if the boat name is already assigned to a boat then return 403 and error
-                if e["name"] == content["name"]:
-                    return (json.dumps(constants.error_boat_name_exists), 403)
+            boat_key = client.key(constants.boats, int(boat_id))
+            # print(boat_key)
+            edit_boats = client.get(key=boat_key)
+            # if boats entity is nonetype return error message and status code
+            if edit_boats is None:
+                return (json.dumps(constants.error_miss_bID), 404)
+            
+            # Add entity comparator to check what subset of attributes changed
+            # update entity values with for loop and if statement that iterates throguh list
+            for value_check in key_match_list:
+                if edit_boats[value_check] != content[value_check]:
+                    edit_boats.update({value_check: content[value_check]})
 
-        # update existing entity as put to datastore
-        client.put(edit_boats)
-        # build self_url from request info
-        self_url = str(request.base_url)
-        # update edit_boats json with id and self url
-        edit_boats.update({"id": edit_boats.key.id, "self": self_url})
-        return (json.dumps(edit_boats), 200)
+            # check boat name if unique or not
+            if "name" in content.keys():
+                query = client.query(kind=constants.boats)
+                results = list(query.fetch())
+                for e in results:
+                    # if the boat name is already assigned to a boat then return 403 and error
+                    if e["name"] == content["name"]:
+                        return (json.dumps(constants.error_boat_name_exists), 403)
+
+            # update existing entity as put to datastore
+            client.put(edit_boats)
+            # build self_url from request info
+            self_url = str(request.base_url)
+            # update edit_boats json with id and self url
+            edit_boats.update({"id": edit_boats.key.id, "self": self_url})
+            # setting status code and content-type type with make_response function
+            res = make_response(json.dumps(edit_boats))
+            res.mimetype = 'application/json'
+            res.status_code = 200
+            # print(res.mimetype)
+            return res
+
+        else: #else statement for request.accept_mimetype
+            # return "This client doesn't accept application/json"
+            return (json.dumps(constants.error_unsupported_accept_type), 406)
 
     elif request.method == 'PUT':
-        content = request.get_json()
-        # using comparison operator for key value check, True if all keys present
-        if not (content.keys()) >= constants.check_keys:
-            return (json.dumps(constants.error_miss_attribute), 400)
+        # check to see if application/json is listed in Accept header
+        if 'application/json' in request.accept_mimetypes:
+            # check if request is json
+            if not request.is_json:
+                # return simple status code for unsupported media type (want JSON)
+                return (json.dumps(constants.error_unsupported_media_type), 415)
 
-        boat_key = client.key(constants.boats, int(boat_id))
-        # print(boat_key)
-        edit_boats = client.get(key=boat_key)
-        # if boats entity is nonetype return error message and status code
-        if edit_boats is None:
-            return (json.dumps(constants.error_miss_bID), 404)
+            content = request.get_json()
+            # using comparison operator for key value check, True if all keys present
+            if not (content.keys()) >= constants.check_keys:
+                return (json.dumps(constants.error_miss_attribute), 400)
 
-        # check boat name if unique or not
-        if "name" in content.keys():
-            query = client.query(kind=constants.boats)
-            results = list(query.fetch())
-            for e in results:
-                # if the boat name is already assigned to a boat then return 403 and error
-                if e["name"] == content["name"]:
-                    return (json.dumps(constants.error_boat_name_exists), 403)
+            boat_key = client.key(constants.boats, int(boat_id))
+            # print(boat_key)
+            edit_boats = client.get(key=boat_key)
+            # if boats entity is nonetype return error message and status code
+            if edit_boats is None:
+                return (json.dumps(constants.error_miss_bID), 404)
 
-        # update entity values
-        edit_boats.update({"name": content["name"], "type": content["type"],
-          "length": content["length"]})
-        # update existing entity as put to datastore
-        client.put(edit_boats)
-        # build self_url from request info
-        self_url = str(request.base_url)
-        # update edit_boats json with id and self url
-        edit_boats.update({"id": edit_boats.key.id, "self": self_url})
-        return (json.dumps(edit_boats), 200)
+            # check boat name if unique or not
+            if "name" in content.keys():
+                query = client.query(kind=constants.boats)
+                results = list(query.fetch())
+                for e in results:
+                    # if the boat name is already assigned to a boat then return 403 and error
+                    if e["name"] == content["name"]:
+                        return (json.dumps(constants.error_boat_name_exists), 403)
+
+            # update entity values
+            edit_boats.update({"name": content["name"], "type": content["type"],
+            "length": content["length"]})
+            # update existing entity as put to datastore
+            client.put(edit_boats)
+            # build self_url from request info
+            self_url = str(request.base_url)
+            # update edit_boats json with id and self url
+            edit_boats.update({"id": edit_boats.key.id, "self": self_url})
+            # setting status code and content-type type with make_response function
+            res = make_response(json.dumps(edit_boats))
+            # res.mimetype = 'application/json'
+            res.headers.set('Content-Type', 'application/json')
+            res.headers.set('Location', self_url)
+            res.status_code = 303
+            # print(res.mimetype)
+            return res
+
+        else: #else statement for request.accept_mimetype
+            # return "This client doesn't accept application/json"
+            return (json.dumps(constants.error_unsupported_accept_type), 406)
+
     else:
         return 'Method not recogonized'
