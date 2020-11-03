@@ -10,6 +10,9 @@ client = datastore.Client()
 # know where it's defined, url_prefix will prepend to all URLs associated with the blueprint.
 bp = Blueprint('boat', __name__, url_prefix='/boats')
 
+def boat_input_validation():
+    return "Hello I'm in the function"
+
 @bp.route('', methods=['POST','GET'])
 def boats_post_get():
     if request.method == 'POST':
@@ -20,12 +23,36 @@ def boats_post_get():
                 # return simple status code for unsupported media type (want JSON)
                 return (json.dumps(constants.error_unsupported_media_type), 415)
 
+            # get request json
             content = request.get_json()
             # using comparison operator for key value check, True if all keys present
             if not (content.keys()) >= constants.check_keys:
                 return (json.dumps(constants.error_miss_attribute), 400)
 
-            # check boat name if unique or not
+            # check boat name length and value type
+            if type(content["name"]) != str: 
+                return (json.dumps(constants.error_boat_name_type), 400)
+            if len(content["name"]) > 33:
+                return (json.dumps(constants.error_boat_name_length), 400) 
+
+            # boat name passes earlier type and length then check if all alpha or space
+            # if string not all alpha or space then return error
+            if not all(letter.isalpha() or letter.isspace() for letter in content["name"]):
+                return "boat name is str and space"
+
+            # check boat type data type and length
+            if type(content["type"]) != str: 
+                return (json.dumps(constants.error_boat_type_str), 400)
+            if len(content["type"]) > 33:
+                return (json.dumps(constants.error_boat_type_length), 400)
+
+            # check length data type and have int value below 10,000ft, largest ship around 1,500 ft
+            if type(content["length"]) != int:
+                return (json.dumps(constants.error_boat_length_type), 400)
+            if content["length"] > 10000 or content["length"] < 0:
+                return (json.dumps(constants.error_boat_length_limit), 400)
+            
+            # input validation, check boat name if unique or not
             query = client.query(kind=constants.boats)
             results = list(query.fetch())
             for e in results:
@@ -56,7 +83,6 @@ def boats_post_get():
         else: #else statement for request.accept_mimetype
             # return "This client doesn't accept application/json"
             return (json.dumps(constants.error_unsupported_accept_type), 406)
-
 
     elif request.method == 'GET': # GET ALL, not part of spec so beginner functions instead of adv.
         # pagination by w04 math implementation
@@ -97,39 +123,41 @@ def boats_post_get():
 @bp.route('/<boat_id>', methods=['GET', 'DELETE', 'PATCH', 'PUT'])
 def boats_get_delete_patch_put(boat_id):
     if request.method == 'GET':
+        # Postman base accept */*, will send perferred accept of JSON
         # check to see if application/json is listed in Accept header
-        if ('text/html' in request.accept_mimetypes) or ('application/json' in request.accept_mimetypes) :
-            # # check if request is json
-            # if not request.is_json:
-            #     # return simple status code for unsupported media type (want JSON)
-            #     return (json.dumps(constants.error_unsupported_media_type), 415)
-
+        if 'application/json' in request.accept_mimetypes:
             boat_key = client.key(constants.boats, int(boat_id))
             boats = client.get(key=boat_key)
             # if boats entity is nonetype return error message and status code
             if boats is None:
                 return (json.dumps(constants.error_miss_bID), 404)
 
-            if 'loads' in boats.keys():
-                for cargo_item in boats["loads"]:
-                    cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"])})
-
             self_url = str(request.base_url)
             boats.update({"id": str(boats.key.id), "self": self_url})
             # results = json.dumps(boats)
 
-            if 'text/html' in request.accept_mimetypes:
-                # source w05 lectures setting headers and json2html module
-                res = make_response(json2html.convert(json=json.dumps(boats)))
-                res.headers.set('Content-Type', 'text/html')
-                res.status_code = 200
-                return res
-            else:
-                # setting status code and content-type type with make_response function
-                res = make_response(json.dumps(boats))
-                res.mimetype = 'application/json'
-                res.status_code = 200
-                return res
+            # setting status code and content-type type with make_response function
+            res = make_response(json.dumps(boats))
+            res.mimetype = 'application/json'
+            res.status_code = 200
+            return res
+
+        # check to see if text/html is listed in Accept header
+        elif 'text/html' in request.accept_mimetypes:
+            boat_key = client.key(constants.boats, int(boat_id))
+            boats = client.get(key=boat_key)
+            # if boats entity is nonetype return error message and status code
+            if boats is None:
+                return (json.dumps(constants.error_miss_bID), 404)
+
+            self_url = str(request.base_url)
+            boats.update({"id": str(boats.key.id), "self": self_url})
+
+            # source w05 lectures setting headers and json2html module
+            res = make_response(json2html.convert(json=json.dumps(boats)))
+            res.headers.set('Content-Type', 'text/html')
+            res.status_code = 200
+            return res
 
         else: #else statement for request.accept_mimetype
             # return "This client doesn't accept application/json"
@@ -160,9 +188,6 @@ def boats_get_delete_patch_put(boat_id):
             key_match_count = 0
             key_match_list = []
             for key_check in content.keys():
-                # print(key_check)
-                # print(type(key_check))
-                # print("TOMMMATTTTOOOO")
                 if key_check in constants.check_keys:
                     key_match_count += 1
                     key_match_list.append(key_check)
@@ -182,6 +207,32 @@ def boats_get_delete_patch_put(boat_id):
             for value_check in key_match_list:
                 if edit_boats[value_check] != content[value_check]:
                     edit_boats.update({value_check: content[value_check]})
+
+'''
+            # check boat name length and value type
+            if type(content["name"]) != str: 
+                return (json.dumps(constants.error_boat_name_type), 400)
+            if len(content["name"]) > 33:
+                return (json.dumps(constants.error_boat_name_length), 400) 
+
+            # boat name passes earlier type and length then check if all alpha or space
+            # if string not all alpha or space then return error
+            if not all(letter.isalpha() or letter.isspace() for letter in content["name"]):
+                return "boat name is str and space"
+
+            # check boat type data type and length
+            if type(content["type"]) != str: 
+                return (json.dumps(constants.error_boat_type_str), 400)
+            if len(content["type"]) > 33:
+                return (json.dumps(constants.error_boat_type_length), 400)
+
+            # check length data type and have int value below 10,000ft, largest ship around 1,500 ft
+            if type(content["length"]) != int:
+                return (json.dumps(constants.error_boat_length_type), 400)
+            if content["length"] > 10000 or content["length"] < 0:
+                return (json.dumps(constants.error_boat_length_limit), 400)
+'''
+
 
             # check boat name if unique or not
             if "name" in content.keys():
@@ -262,3 +313,4 @@ def boats_get_delete_patch_put(boat_id):
 
     else:
         return 'Method not recogonized'
+
