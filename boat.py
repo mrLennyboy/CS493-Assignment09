@@ -342,8 +342,12 @@ def boats_get_delete_patch_put(boat_id):
             return res
 
         else: #else statement for request.accept_mimetype
-            # return "This client doesn't accept application/json" as text/html
-            return (json.dumps(constants.error_unsupported_accept_type), 406)
+            # return "This client doesn't accept application/json"
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
+            res.mimetype = 'application/json'
+            res.status_code = 406
+            return res
+            # return (json.dumps(constants.error_unsupported_accept_type), 406)
 
     elif request.method == 'PUT':
         # check to see if application/json is listed in Accept header
@@ -483,7 +487,11 @@ def boats_get_delete_patch_put(boat_id):
 
         else: #else statement for request.accept_mimetype
             # return "This client doesn't accept application/json" as text/html
-            return (json.dumps(constants.error_unsupported_accept_type), 406)
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
+            res.mimetype = 'application/json'
+            res.status_code = 406
+            return res
+            # return (json.dumps(constants.error_unsupported_accept_type), 406)
 
     else:
         # return 'Method not recogonized'
