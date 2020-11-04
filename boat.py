@@ -13,7 +13,8 @@ bp = Blueprint('boat', __name__, url_prefix='/boats')
 def boat_input_validation():
     return "Hello I'm in the function"
 
-@bp.route('', methods=['POST','GET'])
+# @bp.route('', methods=['POST','GET'])
+@bp.route('', methods=['POST'])
 def boats_post_get():
     if request.method == 'POST':
         # check to see if application/json is listed in Accept header
@@ -134,40 +135,6 @@ def boats_post_get():
         else: #else statement for request.accept_mimetype text/html type
             # return "This client doesn't accept application/json" as text/html
             return (json.dumps(constants.error_unsupported_accept_type), 406)
-
-    elif request.method == 'GET': # GET ALL, not part of spec so beginner functions instead of adv.
-        # pagination by w04 math implementation
-        query = client.query(kind=constants.boats)
-        # pull limit and offset from argument of url, if none use 3 and 0.
-        query_limit = int(request.args.get('limit', '3'))
-        query_offset = int(request.args.get('offset', '0'))
-        # call query.fetch to set the query to start at a particular point and limit of boat entity
-        boat_iterator = query.fetch(limit=query_limit, offset=query_offset)
-        # get query pages attribute, iterator container to contain one page
-        pages = boat_iterator.pages
-        # list() constuctor returns list consisting of iterable items since parameter was an iterable
-        # next() retrieve next item from iterator
-        results = list(next(pages))
-        # iterator property (next_page_token) which is string we pass to query to start up where where left off
-        if boat_iterator.next_page_token:
-            # if next_page_token exists there are more pages left and need to calculat next URL
-            next_offset = query_offset + query_limit
-            next_url = request.base_url + "?limit=" + str(query_limit) + "&offset=" + str(next_offset)
-        else:
-            next_url = None
-        
-        for e in results:
-            e["id"] = e.key.id
-             # build self_url from request info and boat entity key id
-            self_url = str(request.base_url) + '/' + str(e.key.id)
-            # update new_boat json with id and self url
-            e.update({"self": self_url, "id": str(e.key.id)})
-
-        # Add boat list to output
-        output = {"boats": results}
-        if next_url:
-            output["next"] = next_url
-        return (json.dumps(output), 200)
     else:
         # return 'Method not recogonized'
         res = make_response(json.dumps(constants.error_method_not_allowed))
