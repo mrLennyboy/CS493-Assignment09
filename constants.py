@@ -37,3 +37,12 @@ error_boat_length_type = {"Error": "Boat length data type is not int type"}
 
 # boat length is out of range 0 - 10,000 ft
 error_boat_length_limit = {"Error": "Boat length is out of range, it can not be less than 0 or greater than 10,000 ft"}
+
+# boat name input val for name is invalid. Should be only alpha char and space, no special char or nums
+error_boat_name_invalid = {"Error": "Boat name is invalid, needs to be only alpha characters and spaces."}
+
+# boat type input val for name is invalid. Should be only alpha char and space, no special char or nums
+error_boat_type_invalid = {"Error": "Boat type description is invalid, needs to be only alpha characters and spaces."}
+
+# method not allowed error
+error_method_not_allowed = {"Error": "Method not allowed"}
