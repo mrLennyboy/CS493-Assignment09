@@ -14,11 +14,12 @@ error_miss_bID = {"Error": "No boat with this boat_id exists"}
 # Boat with name already exists
 error_boat_name_exists = {"Error": "This boat name already exists"}
 
-# unsupported accept type (406). Client requests medita type the server can't offer.
-error_unsupported_accept_type = {"Error": "Not Acceptable"}
+# unsupported accept type (406 Not Acceptable). Client requests medita type the server can't offer.
+error_unsupported_accept_type = {"Error": "Client requests media type the server can't offer"}
 
-# unsupported media type (415). For request not JSON
-error_unsupported_media_type = {"Error": "Unsupported Media Type"}
+# unsupported media type (415). For request not JSON. Client send unsupported media typ to the server
+# the server will respond to the client it is not acceptable
+error_unsupported_media_type = {"Error": "Client has sent Unsupported Media Type"}
 
 # boat name type is not string type
 error_boat_name_type = {"Error": "Boat name is not string type"}
@@ -45,4 +46,4 @@ error_boat_name_invalid = {"Error": "Boat name is invalid, needs to be only alph
 error_boat_type_invalid = {"Error": "Boat type description is invalid, needs to be only alpha characters and spaces."}
 
 # method not allowed error
-error_method_not_allowed = {"Error": "Method not allowed"}
+error_method_not_allowed = {"Error": "Method not allowed for this endpoint"}

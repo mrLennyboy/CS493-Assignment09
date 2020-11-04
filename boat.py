@@ -134,7 +134,11 @@ def boats_post_get():
 
         else: #else statement for request.accept_mimetype text/html type
             # return "This client doesn't accept application/json" as text/html
-            return (json.dumps(constants.error_unsupported_accept_type), 406)
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
+            res.mimetype = 'application/json'
+            res.status_code = 406
+            return res
+            # return (json.dumps(constants.error_unsupported_accept_type), 406)
     else:
         # return 'Method not recogonized'
         res = make_response(json.dumps(constants.error_method_not_allowed))
@@ -190,7 +194,11 @@ def boats_get_delete_patch_put(boat_id):
 
         else: #else statement for request.accept_mimetype
             # return "This client doesn't accept application/json" leave as text/html
-            return (json.dumps(constants.error_unsupported_accept_type), 406)
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
+            res.mimetype = 'application/json'
+            res.status_code = 406
+            return res
+            # return (json.dumps(constants.error_unsupported_accept_type), 406)
 
     elif request.method =='DELETE':
         boat_key = client.key(constants.boats, int(boat_id))
@@ -211,9 +219,9 @@ def boats_get_delete_patch_put(boat_id):
         # check to see if application/json is listed in Accept header
         if 'application/json' in request.accept_mimetypes:
             boat_key = client.key(constants.boats, int(boat_id))
-            boats = client.get(key=boat_key)
+            edit_boats = client.get(key=boat_key)
             # if boats entity is nonetype return error message and status code
-            if boats is None:
+            if edit_boats is None:
                 res = make_response(json.dumps(constants.error_miss_bID))
                 res.mimetype = 'application/json'
                 res.status_code = 404
