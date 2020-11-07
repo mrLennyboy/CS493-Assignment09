@@ -1,7 +1,7 @@
 '''
 Name:   Jasper Wong
-Date:   10-30-2020`
-Source: CS 493 W03 & W02 HW, CS CS 493 W04, Google Cloud Platform docs
+Date:   11-07-2020
+Source: CS 493 W02-W05 HW, Google Cloud Platform docs
 
 '''
 from google.cloud import datastore
