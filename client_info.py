@@ -1,4 +1,5 @@
 # constants for client secret info and redirects 
+
 CLIENT_ID = '823710541896-sq5est11004asi1qbu3d5ehc7954hnrq.apps.googleusercontent.com'
 CLIENT_SECRET = 'odswOXW_inMxoJnXV_pZxLzp'  # Read from a file or environmental variable in a real app
 SCOPE = 'https://www.googleapis.com/auth/userinfo.profile'
