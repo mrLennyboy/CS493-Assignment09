@@ -1,18 +1,19 @@
 <!doctype html>
 <html>
 <head>
-  <title>Jasper Wong Datastore Example From Tutorial</title>
+  <title>HW06 WONGJASP CS493</title>
   <script src="{{ url_for('static', filename='script.js') }}"></script>
   <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-  <h1>Jasper Wong Datastore Example From Tutorial</h1>
-
-  <h2>Last 10 visits</h2>
+  <h1>CS493 Welcome Page</h1>
+  <h2>Jasper Wong (wongjasp)</h2>
+  <p>{{user_info}}</p>
+  <!-- <h2>Last 10 visits</h2>
   {% for time in times %}
     <p>{{ time['timestamp'] }}</p>
-  {% endfor %}
+  {% endfor %} -->
 
 </body>
 </html>
