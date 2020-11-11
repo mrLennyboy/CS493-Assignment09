@@ -20,6 +20,8 @@ app.secret_key = str(uuid.uuid4())
 
 @app.route('/')
 def index():
+  if 'credentials' in flask.session:
+    flask.session.clear() # clears out session
   return render_template('index.html')
 
 
