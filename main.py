@@ -20,10 +20,14 @@ app.secret_key = str(uuid.uuid4())
 
 @app.route('/')
 def index():
-  if 'credentials' in flask.session:
+  if 'state' in flask.session:
     flask.session.clear() # clears out session
   return render_template('index.html')
 
+@app.route('/logout') # not REST, rush job. Logout link.
+def reset_State():
+  flask.session.clear()
+  return flask.redirect(flask.url_for('index'))
 
 # @app.route('/')
 # def index():
