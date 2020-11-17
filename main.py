@@ -1,7 +1,7 @@
 '''
 Name:   Jasper Wong
-Date:   10-30-2020`
-Source: CS 493 W03 & W02 HW, CS CS 493 W04, Google Cloud Platform docs
+Date:   11-17-2020
+Source: CS 493 W01-07, Google Cloud Platform docs, W07 starter code for JWT
 '''
 
 from google.cloud import datastore
@@ -29,6 +29,7 @@ app.register_blueprint(boat.bp)
 
 # These should be copied from an OAuth2 Credential section at
 # https://console.cloud.google.com/apis/credentials
+# <--Make more secret later!
 client_id = r'738414428886-q90bmjktsguj02hfl6ula7pc7svitmst.apps.googleusercontent.com'
 client_secret = r'R40IGzzryXJcZ_gxTisWi5Br'
 
@@ -75,7 +76,8 @@ def oauthroute():
     token['id_token'], req, client_id)
     
     # # Jasper add, id_info has data payload
-    # print(id_info)
+    print(id_info)
+    print(id_info.get('sub'))
     # print(id_info.get('email'))
 
     # print("<------See the token----->")
