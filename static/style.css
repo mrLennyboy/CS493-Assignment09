@@ -2,3 +2,11 @@ body {
     font-family: "helvetica", sans-serif;
     text-align: center;
   }
+
+  .container {
+    width: 200px;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
