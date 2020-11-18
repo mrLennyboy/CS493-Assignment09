@@ -16,6 +16,8 @@ from google.auth.transport import requests
 # files for constants and boat routes by blueprint
 import constants
 import boat
+import owner
+import client_info
 
 # This disables the requirement to use HTTPS so that you can test locally.
 import os 
@@ -26,6 +28,7 @@ client = datastore.Client()
 
 # register blueprints on application
 app.register_blueprint(boat.bp)
+app.register_blueprint(owner.bp)
 
 # These should be copied from an OAuth2 Credential section at
 # https://console.cloud.google.com/apis/credentials
@@ -77,15 +80,16 @@ def oauthroute():
     
     # # Jasper add, id_info has data payload
     print(id_info)
-    print(id_info.get('sub'))
+    # print(id_info.get('sub'))
+    # print(id_info['sub'])
     # print(id_info.get('email'))
 
-    # print("<------See the token----->")
-    # print(token)
-    # print("<------See the token end----->")
+    print("<------See the token----->")
+    print(token)
+    print("<------See the token end----->")
 
     # print("<------See the token['id_token'] this is the JWT----->")
-    # print(token['id_token'])
+    print(token['id_token'])
     # print("<------See the token['id_token'] end----->")
 
     # # see the args , <----work on this later
@@ -95,7 +99,6 @@ def oauthroute():
     # print("<------See the args end----->")
 
     # return "Your JWT is: %s" % token['id_token']
-    # return render_template('user-info.html', familyName = familyName, givenName = givenName, stateVal = flask.session["state"])
     return render_template('user-info.html', JWT = token['id_token'], USER_EMAIL = id_info.get('email'))
 
 # This page demonstrates verifying a JWT. id_info['email'] contains
@@ -103,19 +106,15 @@ def oauthroute():
 # this is the code that could prefix any API call that needs to be
 # tied to a specific user by checking that the email in the verified
 # JWT matches the email associated to the resource being accessed.
-@app.route('/verify-jwt') # <-- don't know eough to make work but doesn't look like I need it for hw07
+@app.route('/verify-jwt') # <-- Postman, params --> key: jwt, value: the is jwt value
 def verify():
     req = requests.Request()
-
-    # print random for debug & understanding
-    # print("<<-------------------------HELLO------->")
-    # print(requests.args['jwt'])
-    # print("<<-------------------------HELLO------->")
 
     id_info = id_token.verify_oauth2_token( 
     request.args['jwt'], req, client_id)
 
-    return repr(id_info) + "<br><br> the user is: " + id_info['email']
+    return repr(id_info) + "<br><br> the user is: " + id_info['sub']
+
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080, debug=True)

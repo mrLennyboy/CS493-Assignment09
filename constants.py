@@ -2,7 +2,7 @@ boats = "boats"
 
 
 # keys for boat response body
-check_keys = {"name", "type", "length"}
+check_keys = {"name", "type", "length", "public"}
 
 # Errors
 # Missing an attribute (boat & loads)
