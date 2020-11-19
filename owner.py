@@ -20,59 +20,82 @@ import client_info
 # know where it's defined, url_prefix will prepend to all URLs associated with the blueprint.
 bp = Blueprint('owner', __name__, url_prefix='/owners')
 
+def get_sub_info():
+        # get sub info from JWT, owner of boat
+    if 'Authorization' in request.headers:
+        user_jwt = request.headers['Authorization']
+        user_jwt = user_jwt.replace("Bearer ", "")
+        req = requests.Request()
+
+        try:
+            id_info = id_token.verify_oauth2_token( 
+                user_jwt, req, client_info.CLIENT_ID)
+            user_sub = id_info['sub']
+            return user_sub
+        except:
+            return "Error: JWT is invalid"
+    else:
+        return "Error: No Authorization in request header"
+
+def get_sub_valid(sub_info):
+    if sub_info == "Error: No Authorization in request header":
+        return False
+    elif sub_info == "Error: JWT is invalid":
+        return False
+    else:
+        return True
+
 @bp.route('/<owner_id>/boats', methods=['GET'])
-def boats_get_delete_patch_put(boat_id):
+def boats_get_delete_patch_put(owner_id):
     if request.method == 'GET':
-        # Postman base accept */*, will send perferred accept of JSON
-        # check to see if application/json is listed in Accept header
-        if 'application/json' in request.accept_mimetypes:
-            boat_key = client.key(constants.boats, int(boat_id))
-            boats = client.get(key=boat_key)
-            # if boats entity is nonetype return error message and status code
-            if boats is None:
-                res = make_response(json.dumps(constants.error_miss_bID))
-                res.mimetype = 'application/json'
-                res.status_code = 404
-                return res
-                # return (json.dumps(constants.error_miss_bID), 404)
+        #owner of the boat, value of sub property in the JWT
+        owner_sub = get_sub_info()
 
-            self_url = str(request.base_url)
-            boats.update({"id": str(boats.key.id), "self": self_url})
+        # bool val if owner_sub is valid or not
+        owner_sub_valid = get_sub_valid(owner_sub)
 
-            # setting status code and content-type type with make_response function
-            res = make_response(json.dumps(boats))
+        # query data store for boats
+        query = client.query(kind=constants.boats)
+        results = list(query.fetch())
+
+        # If no JWT is provided or an invalid JWT is provided,
+        # return all public boats that belong to owner and 200 status code
+        results_filtered=[]
+        # if valid_sub == False:
+        if owner_sub_valid == False:
+            for e in results:
+                e["id"] = str(e.key.id)
+                # build self_url from request info and boat entity key id
+                self_url = str(request.base_url) + '/' + str(e.key.id)
+                # update new_boat json with id and self url
+                e.update({"self": self_url})
+                # slow method to add all public boats
+                if e.get("public") == True and e.get("owner") == owner_id:
+                    results_filtered.append(e)
+        # elif valid_sub == True:
+        elif owner_sub_valid == True and owner_id == owner_sub:
+            for e in results:
+                e["id"] = str(e.key.id)
+                # build self_url from request info and boat entity key id
+                self_url = str(request.base_url) + '/' + str(e.key.id)
+                # update new_boat json with id and self url
+                e.update({"self": self_url})
+                # slow method to add to add only owner boats
+                if e.get("owner") == owner_id and e.get("public") == True:
+                    results_filtered.append(e)
+        
+        results = results_filtered
+        # in python empty list eval to false
+        if not results:
+            res = make_response({"Error": "This boat owner has no public boats available"})
             res.mimetype = 'application/json'
             res.status_code = 200
             return res
-
-        # check to see if text/html is listed in Accept header
-        elif 'text/html' in request.accept_mimetypes:
-            boat_key = client.key(constants.boats, int(boat_id))
-            boats = client.get(key=boat_key)
-            # if boats entity is nonetype return error message and status code
-            if boats is None:
-                res = make_response(json.dumps(constants.error_miss_bID))
-                res.mimetype = 'text/html'
-                res.status_code = 404
-                return res
-                # return (json.dumps(constants.error_miss_bID), 404)
-
-            self_url = str(request.base_url)
-            boats.update({"id": str(boats.key.id), "self": self_url})
-
-            # source w05 lectures setting headers and json2html module
-            res = make_response(json2html.convert(json=json.dumps(boats)))
-            res.headers.set('Content-Type', 'text/html')
-            res.status_code = 200
-            return res
-
-        else: #else statement for request.accept_mimetype
-            # return "This client doesn't accept application/json" leave as text/html
-            res = make_response(json.dumps(constants.error_unsupported_accept_type))
-            res.mimetype = 'application/json'
-            res.status_code = 406
-            return res
-            # return (json.dumps(constants.error_unsupported_accept_type), 406)
+        # setting status code and content-type type with make_response function
+        res = make_response(json.dumps(results))
+        res.mimetype = 'application/json'
+        res.status_code = 200
+        return res
 
     else:
         # return 'Method not recogonized'

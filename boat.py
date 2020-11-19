@@ -200,7 +200,6 @@ def boats_post_get():
 
         # start code from hw03
     elif request.method == 'GET':
-
         #owner of the boat, value of sub property in the JWT
         owner_sub = get_sub_info()
 
