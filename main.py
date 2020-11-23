@@ -1,6 +1,6 @@
 '''
 Name:   Jasper Wong
-Date:   11-17-2020
+Date:   11-18-2020
 Source: CS 493 W01-07, Google Cloud Platform docs, W07 starter code for JWT
 '''
 
@@ -19,9 +19,9 @@ import boat
 import owner
 import client_info
 
-# This disables the requirement to use HTTPS so that you can test locally.
-import os 
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+# # This disables the requirement to use HTTPS so that you can test locally.
+# import os 
+# os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 app = Flask(__name__)
 client = datastore.Client()
@@ -38,7 +38,8 @@ client_secret = r'R40IGzzryXJcZ_gxTisWi5Br'
 
 # This is the page that you will use to decode and collect the info from
 # the Google authentication flow
-redirect_uri = 'http://127.0.0.1:8080/oauth'
+# redirect_uri = 'http://127.0.0.1:8080/oauth' # for local only
+redirect_uri = 'https://hw07-wongjasp.wl.r.appspot.com/oauth'
 
 # These let us get basic info to identify a user and not much else
 # they are part of the Google People API
@@ -47,12 +48,6 @@ scope = ['https://www.googleapis.com/auth/userinfo.email',
 # scope = ['https://www.googleapis.com/auth/userinfo.profile']
 oauth = OAuth2Session(client_id, redirect_uri=redirect_uri,
                           scope=scope)
-
-# my old code from hw05 - REST
-# @app.route('/')
-# def index():
-#     return "Please navigate to /boats and /loads to use this API"\
-
 
 # This link will redirect users to begin the OAuth flow with Google
 @app.route('/')
@@ -78,25 +73,7 @@ def oauthroute():
     id_info = id_token.verify_oauth2_token( 
     token['id_token'], req, client_id)
     
-    # # Jasper add, id_info has data payload
-    print(id_info)
-    # print(id_info.get('sub'))
-    # print(id_info['sub'])
-    # print(id_info.get('email'))
-
-    print("<------See the token----->")
-    print(token)
-    print("<------See the token end----->")
-
-    # print("<------See the token['id_token'] this is the JWT----->")
-    print(token['id_token'])
-    # print("<------See the token['id_token'] end----->")
-
-    # # see the args , <----work on this later
-    # print("<------See the args----->")
-    # # print(request.args['jwt'])
-    # print(request.args.get('code'))
-    # print("<------See the args end----->")
+    # print(token['id_token'])
 
     # return "Your JWT is: %s" % token['id_token']
     return render_template('user-info.html', JWT = token['id_token'], USER_EMAIL = id_info.get('email'))
