@@ -48,19 +48,19 @@ def get_sub_valid(sub_info):
     else:
         return True
 
-def sub_return_status(sub_info): # <--figure out why not working
-    if sub_info == "Error: No Authorization in request header":
-        res = make_response({"Error": "No Authorization in request header"})
-        res.mimetype = 'application/json'
-        res.status_code = 401
-        return res
-    elif sub_info == "Error: JWT is invalid":
-        res = make_response({"Error": "JWT is invalid"})
-        res.mimetype = 'application/json'
-        res.status_code = 401
-        return res
-    else:
-        pass
+# def sub_return_status(sub_info): # <--figure out why not working
+#     if sub_info == "Error: No Authorization in request header":
+#         res = make_response({"Error": "No Authorization in request header"})
+#         res.mimetype = 'application/json'
+#         res.status_code = 401
+#         return res
+#     elif sub_info == "Error: JWT is invalid":
+#         res = make_response({"Error": "JWT is invalid"})
+#         res.mimetype = 'application/json'
+#         res.status_code = 401
+#         return res
+#     else:
+#         pass
 
 
 @bp.route('', methods=['POST','GET'])
