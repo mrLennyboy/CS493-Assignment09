@@ -159,10 +159,12 @@ def boats_post_get():
                 res.mimetype = 'application/json'
                 res.status_code = 400
                 return res
-            
+
             # input validation, check boat name if unique or not <-----
-            query = client.query(kind=constants.reg_users)
+            query = client.query(kind=constants.boats)
             results = list(query.fetch())
+            print(results)
+            # if results: # if list is empty then false
             for e in results:
                 # if the boat name is already assigned to a boat then return 403 and error
                 if e["name"] == content["name"]:

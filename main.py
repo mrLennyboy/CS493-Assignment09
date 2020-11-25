@@ -5,7 +5,7 @@ Source: Everything from CS 493 and Google Docs
 '''
 
 from google.cloud import datastore
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, make_response
 from requests_oauthlib import OAuth2Session
 import json
 from google.oauth2 import id_token
@@ -77,9 +77,7 @@ def oauthroute():
     # input validation, check reg user id unique or not. Have to go through datastore entities list, can't use user_id as key check.
     query = client.query(kind=constants.reg_users)
     results = list(query.fetch())
-    # print(results)
     match_count = 0
-    print(match_count)
     for e in results:
         # if the user id is already assigned to registered user then ignore
         if e["user_id"] == id_info.get('sub'):
@@ -100,7 +98,7 @@ def oauthroute():
 # this is the code that could prefix any API call that needs to be
 # tied to a specific user by checking that the email in the verified
 # JWT matches the email associated to the resource being accessed.
-@app.route('/verify-jwt') # <-- Postman, params --> key: jwt, value: the is jwt value
+@app.route('/verify-jwt') # <-- Postman, params --> key: jwt, value: the is jwt value, need to be json response <-----
 def verify():
     req = requests.Request()
 
@@ -109,9 +107,27 @@ def verify():
 
     return repr(id_info) + "<br><br> the user is: " + id_info['sub']
 
-# # Unprotected Endpoint that returns all users currently "registered" with the app
-# @app.route('/users')
-# def registered_user():
+# # Unprotected Endpoint that returns all users currently "registered" with the app in datastore
+@app.route('/users', methods=['GET'])
+def registered_user():
+    if request.method == 'GET':
+        query = client.query(kind=constants.reg_users)
+        results = list(query.fetch())
+        user_list = []
+        for e in results:
+            user_list.append(e)
+        res = make_response(json.dumps(user_list))
+        res.mimetype = 'application/json'
+        res.status_code = 200
+        return res
+
+    else:
+        # return 'Method not recogonized'
+        res = make_response(json.dumps(constants.error_method_not_allowed))
+        res.mimetype = 'application/json'
+        res.status_code = 405
+        return res
+
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080, debug=True)
