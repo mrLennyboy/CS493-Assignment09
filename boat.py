@@ -160,8 +160,8 @@ def boats_post_get():
                 res.status_code = 400
                 return res
             
-            # input validation, check boat name if unique or not
-            query = client.query(kind=constants.boats)
+            # input validation, check boat name if unique or not <-----
+            query = client.query(kind=constants.reg_users)
             results = list(query.fetch())
             for e in results:
                 # if the boat name is already assigned to a boat then return 403 and error
@@ -198,7 +198,7 @@ def boats_post_get():
             res.status_code = 406
             return res
 
-        # start code from hw03
+
     elif request.method == 'GET':
         #owner of the boat, value of sub property in the JWT
         owner_sub = get_sub_info()

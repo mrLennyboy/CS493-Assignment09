@@ -74,7 +74,25 @@ def oauthroute():
     # print(token['id_token'])
     # print(id_info)
 
-    # return "Your JWT is: %s" % token['id_token']
+    # input validation, check reg user id unique or not. Have to go through datastore entities list, can't use user_id as key check.
+    query = client.query(kind=constants.reg_users)
+    results = list(query.fetch())
+    # print(results)
+    match_count = 0
+    print(match_count)
+    for e in results:
+        # if the user id is already assigned to registered user then ignore
+        if e["user_id"] == id_info.get('sub'):
+            match_count += 1
+            break
+    if match_count == 0:
+        # create datastore entity, to add to users endpoint
+        new_reg_users = datastore.entity.Entity(key=client.key(constants.reg_users))
+        # Update new entity with content data
+        new_reg_users.update({"user_email": id_info.get("email"), "user_id": id_info.get('sub')})
+        # put new entity to datastore
+        client.put(new_reg_users)
+
     return render_template('user-info.html', JWT = token['id_token'], USER_EMAIL = id_info.get('email'), USER_ID = id_info.get('sub'))
 
 # This page demonstrates verifying a JWT. id_info['email'] contains
@@ -91,6 +109,9 @@ def verify():
 
     return repr(id_info) + "<br><br> the user is: " + id_info['sub']
 
+# # Unprotected Endpoint that returns all users currently "registered" with the app
+# @app.route('/users')
+# def registered_user():
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080, debug=True)

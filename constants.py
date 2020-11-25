@@ -1,5 +1,6 @@
 boats = "boats"
-
+loads = "loads"
+reg_users = "reg_users"
 
 # keys for boat response body
 check_keys = {"name", "type", "length", "public"}

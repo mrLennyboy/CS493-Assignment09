@@ -1,6 +1,6 @@
 # constants for client secret info and redirects 
-# constants for hw07
-CLIENT_ID = '738414428886-q90bmjktsguj02hfl6ula7pc7svitmst.apps.googleusercontent.com'
+# constants for hw09
+CLIENT_ID = '153129745149-jn0an4tjr2t7nslud3qm51th2e5087ma.apps.googleusercontent.com'
 
 # constants from hw06
 # CLIENT_ID = '738414428886-q90bmjktsguj02hfl6ula7pc7svitmst.apps.googleusercontent.com'
