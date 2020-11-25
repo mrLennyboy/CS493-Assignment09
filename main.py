@@ -70,9 +70,6 @@ def oauthroute():
 
     id_info = id_token.verify_oauth2_token( 
     token['id_token'], req, client_id)
-    
-    # print(token['id_token'])
-    # print(id_info)
 
     # input validation, check reg user id unique or not. Have to go through datastore entities list, can't use user_id as key check.
     query = client.query(kind=constants.reg_users)

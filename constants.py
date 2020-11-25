@@ -5,6 +5,9 @@ reg_users = "reg_users"
 # keys for boat response body
 check_keys = {"name", "type", "length", "public"}
 
+# keys for loads response body
+check_keys_2 = {"weight", "content", "delivery_date"}
+
 # Errors
 # Missing an attribute (boat & loads)
 error_miss_attribute = {"Error": "The request object is missing at least one of the required attributes"}
