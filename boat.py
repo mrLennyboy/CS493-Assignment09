@@ -284,7 +284,8 @@ def boat_id_get_delete(boat_id):
 
         self_url = str(request.base_url)
         boats.update({"id": str(boats.key.id), "self": self_url})
-        results = json.dumps(boats)
+        # results = json.dumps(boats)
+        results = boats
         # setting status code and content-type type with make_response function
         res = make_response(json.dumps(results))
         res.mimetype = 'application/json'
