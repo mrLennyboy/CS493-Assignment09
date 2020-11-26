@@ -253,9 +253,45 @@ def boats_post_get():
         res.status_code = 405
         return res
 
-@bp.route('/<boat_id>', methods=['DELETE'])
-def boats_delete(boat_id):
-    if request.method =='DELETE':
+@bp.route('/<boat_id>', methods=['GET', 'DELETE'])
+def boat_id_get_delete(boat_id):
+    if request.method == 'GET':
+        #owner of the boat, value of sub property in the JWT
+        owner_sub = get_sub_info()
+
+        #rush job error check for getting owner sub info
+        # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
+        if owner_sub == "Error: No Authorization in request header":
+            res = make_response({"Error": "No Authorization in request header"})
+            res.mimetype = 'application/json'
+            res.status_code = 401
+            return res
+        elif owner_sub == "Error: JWT is invalid":
+            res = make_response({"Error": "JWT is invalid"})
+            res.mimetype = 'application/json'
+            res.status_code = 401
+            return res
+
+        boat_key = client.key(constants.boats, int(boat_id))
+        boats = client.get(key=boat_key)
+        # if boats entity is nonetype return error message and status code
+        if boats is None:
+            return (json.dumps(constants.error_miss_bID), 404)
+
+        if 'loads' in boats.keys():
+            for cargo_item in boats["loads"]:
+                cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"])})
+
+        self_url = str(request.base_url)
+        boats.update({"id": str(boats.key.id), "self": self_url})
+        results = json.dumps(boats)
+        # setting status code and content-type type with make_response function
+        res = make_response(json.dumps(results))
+        res.mimetype = 'application/json'
+        res.status_code = 200
+        return res
+
+    elif request.method =='DELETE':
         #owner of the boat, value of sub property in the JWT
         owner_sub = get_sub_info()
 
@@ -273,7 +309,7 @@ def boats_delete(boat_id):
             return res
 
         # rush job error check v2 for route spec. <-- not necessary
-        owner_sub_valid = get_sub_valid(owner_sub)
+        # owner_sub_valid = get_sub_valid(owner_sub)
 
         boat_key = client.key(constants.boats, int(boat_id))
         # get boat entity with the key requested
