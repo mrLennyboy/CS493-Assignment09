@@ -6,7 +6,7 @@ reg_users = "reg_users"
 check_keys = {"name", "type", "length", "public"}
 
 # keys for loads response body
-check_keys_2 = {"weight", "content", "delivery_date"}
+check_keys_3 = {"weight", "content", "delivery_date"}
 
 # Errors
 # Missing an attribute (boat & loads)

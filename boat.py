@@ -207,50 +207,86 @@ def boats_post_get():
         # bool val if owner_sub is valid or not
         owner_sub_valid = get_sub_valid(owner_sub)
 
-        # print("The sub is: " + owner_sub)
         # query data store for boats
         query = client.query(kind=constants.boats)
-        results = list(query.fetch())
+        
+        # <-------A
+        # results = list(query.fetch()) 
 
-        # If no JWT is provided or an invalid JWT is provided,
-        # return all public boats and 200 status code
-        results_filtered=[]
-        # if valid_sub == False:
-        if owner_sub_valid == False:
-            for e in results:
-                e["id"] = str(e.key.id)
-                # build self_url from request info and boat entity key id
-                self_url = str(request.base_url) + '/' + str(e.key.id)
-                # update new_boat json with id and self url
-                e.update({"self": self_url})
-                # slow method to add all public boats
-                if e.get("public") == True:
-                    results_filtered.append(e)
-        # elif valid_sub == True:
-        elif owner_sub_valid == True:
-            for e in results:
-                e["id"] = str(e.key.id)
-                # build self_url from request info and boat entity key id
-                self_url = str(request.base_url) + '/' + str(e.key.id)
-                # update new_boat json with id and self url
-                e.update({"self": self_url})
-                # slow method to add to add only owner boats
-                if e.get("owner") == owner_sub:
-                    results_filtered.append(e)
+        # # If no JWT is provided or an invalid JWT is provided,
+        # # return all public boats and 200 status code
+        # results_filtered=[]
+        # # if valid_sub == False:
+        # if owner_sub_valid == False:
+        #     for e in results:
+        #         e["id"] = str(e.key.id)
+        #         # build self_url from request info and boat entity key id
+        #         self_url = str(request.base_url) + '/' + str(e.key.id)
+        #         # update new_boat json with id and self url
+        #         e.update({"self": self_url})
+        #         # slow method to add all public boats
+        #         if e.get("public") == True:
+        #             results_filtered.append(e)
+        # # elif valid_sub == True:
+        # elif owner_sub_valid == True:
+        #     for e in results:
+        #         e["id"] = str(e.key.id)
+        #         # build self_url from request info and boat entity key id
+        #         self_url = str(request.base_url) + '/' + str(e.key.id)
+        #         # update new_boat json with id and self url
+        #         e.update({"self": self_url})
+        #         # slow method to add to add only owner boats
+        #         if e.get("owner") == owner_sub:
+        #             results_filtered.append(e)
         
-        results = results_filtered
-        # setting status code and content-type type with make_response function
-        res = make_response(json.dumps(results))
-        res.mimetype = 'application/json'
-        res.status_code = 200
-        return res
-        
+        # <-------------------
+        # pull limit and offset from argument of url, if none use 5 and 0.
+        query_limit = int(request.args.get('limit', '5'))
+        query_offset = int(request.args.get('offset', '0'))
+        # call query.fetch to set the query to start at a particular point and limit of boat entity
+        boat_iterator = query.fetch(limit=query_limit, offset=query_offset)
+        # get query pages attribute, iterator container to contain one page
+        pages = boat_iterator.pages
+        # list() constuctor returns list consisting of iterable items since parameter was an iterable
+        # next() retrieve next item from iterator
+        results = list(next(pages))
+        # iterator property (next_page_token) which is string we pass to query to start up where where left off
+        if boat_iterator.next_page_token:
+            # if next_page_token exists there are more pages left and need to calculat next URL
+            next_offset = query_offset + query_limit
+            next_url = request.base_url + "?limit=" + str(query_limit) + "&offset=" + str(next_offset)
+        else:
+            next_url = None
+
+        for e in results:
+            e["id"] = str(e.key.id)
+             # build self_url from request info and boat entity key id
+            self_url = str(request.base_url) + '/' + e["id"]
+            # update new_load json with self url
+            e.update({"self": self_url})
+            
+        # Add load list to output
+        output = {"loads": results}
+        if next_url:
+            output["next"] = next_url
+        return (json.dumps(output), 200)
     else:
-        # return 'Method not recogonized'
-        res = make_response(json.dumps(constants.error_method_not_allowed))
-        res.mimetype = 'application/json'
-        res.status_code = 405
-        return res
+        return 'Method not recogonized'
+        # <------------------
+
+        # results = results_filtered
+        # # setting status code and content-type type with make_response function
+        # res = make_response(json.dumps(results))
+        # res.mimetype = 'application/json'
+        # res.status_code = 200
+        # return res
+        
+    # else:
+    #     # return 'Method not recogonized'
+    #     res = make_response(json.dumps(constants.error_method_not_allowed))
+    #     res.mimetype = 'application/json'
+    #     res.status_code = 405
+    #     return res
 
 @bp.route('/<boat_id>', methods=['GET', 'DELETE', 'PATCH', 'PUT'])
 def boat_id_get_delete(boat_id):
@@ -400,7 +436,6 @@ def boat_id_get_delete(boat_id):
                 res.mimetype = 'application/json'
                 res.status_code = 400
                 return res
-
 
             # input validation for keys that passed, not elegant
             for value_check in key_match_list:

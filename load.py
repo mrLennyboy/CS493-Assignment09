@@ -17,27 +17,94 @@ client = datastore.Client()
 # know where it's defined, url_prefix will prepend to all URLs associated with the blueprint.
 bp = Blueprint('load', __name__, url_prefix='/loads')
 
+def get_sub_info():
+        # get sub info from JWT, owner of boat
+    if 'Authorization' in request.headers:
+        user_jwt = request.headers['Authorization']
+        user_jwt = user_jwt.replace("Bearer ", "")
+        req = requests.Request()
+
+        try:
+            id_info = id_token.verify_oauth2_token( 
+                user_jwt, req, client_info.CLIENT_ID)
+            user_sub = id_info['sub']
+            return user_sub
+        except:
+            return "Error: JWT is invalid"
+    else:
+        return "Error: No Authorization in request header"
+
+def get_sub_valid(sub_info):
+    if sub_info == "Error: No Authorization in request header":
+        return False
+    elif sub_info == "Error: JWT is invalid":
+        return False
+    else:
+        return True
+
 @bp.route('', methods=['POST','GET'])
 def loads_post_get():
     if request.method == 'POST':
-        content = request.get_json()
-        # using comparison operator for key value check, True if all keys present
-        if not (content.keys()) >= constants.check_keys_3:
-            return (json.dumps(constants.error_miss_attribute), 400)
+        # check to see if application/json is listed in Accept header
+        if 'application/json' in request.accept_mimetypes:
+            # check if request is json
+            if not request.is_json:
+                # return simple status code for unsupported media type (want JSON)
+                res = make_response(json.dumps(constants.error_unsupported_media_type))
+                res.mimetype = 'application/json'
+                res.status_code = 415
+                return res
 
-        # creat datastore entity
-        new_load = datastore.entity.Entity(key=client.key(constants.loads))
-        new_load.update({"weight": content["weight"], "carrier": None,
-          "content": content["content"], "delivery_date": content["delivery_date"]})
-        # put new entity to datastore
-        client.put(new_load)
-        
-        # build self_url from request info and new new_load entity key id
-        self_url = str(request.base_url) + '/' + str(new_load.key.id)
-        # update new_load json with id and self url
-        new_load.update({"id": str(new_load.key.id), "self": self_url})
-        #return tuple of new_load json string and status code 201
-        return (json.dumps(new_load), 201)
+            # get request json
+            content = request.get_json()
+
+            #owner of the boat, value of sub property in the JWT
+            owner_sub = get_sub_info()
+
+            #rush job error check for getting owner sub info
+            # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
+            if owner_sub == "Error: No Authorization in request header":
+                res = make_response({"Error": "No Authorization in request header"})
+                res.mimetype = 'application/json'
+                res.status_code = 401
+                return res
+            elif owner_sub == "Error: JWT is invalid":
+                res = make_response({"Error": "JWT is invalid"})
+                res.mimetype = 'application/json'
+                res.status_code = 401
+                return res
+
+            # using comparison operator for key value check, True if all keys present
+            if not (content.keys()) >= constants.check_keys_3:
+                res = make_response(json.dumps(constants.error_miss_attribute))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+                # return (json.dumps(constants.error_miss_attribute), 400)
+
+            # creat datastore entity
+            new_load = datastore.entity.Entity(key=client.key(constants.loads))
+
+            # Update new entity with content data, empty carrier explicit defined
+            new_load.update({"weight": content["weight"], "carrier": None,
+            "content": content["content"], "delivery_date": content["delivery_date"]})
+            # put new entity to datastore
+            client.put(new_load)
+            
+            # build self_url from request info and new new_load entity key id
+            self_url = str(request.base_url) + '/' + str(new_load.key.id)
+            # update new_load json with id and self url
+            new_load.update({"id": str(new_load.key.id), "self": self_url})
+            #return tuple of new_load json string and status code 201
+            return (json.dumps(new_load), 201)
+
+        else: #else statement for request.accept_mimetype text/html type
+            # return "This client doesn't accept application/json" as text/html
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
+            res.mimetype = 'application/json'
+            res.status_code = 406
+            return res
+
 
     elif request.method == 'GET':
         # pagination by w04 math implementation
@@ -73,7 +140,11 @@ def loads_post_get():
             output["next"] = next_url
         return (json.dumps(output), 200)
     else:
-        return 'Method not recogonized'
+        # return 'Method not recogonized'
+        res = make_response(json.dumps(constants.error_method_not_allowed))
+        res.mimetype = 'application/json'
+        res.status_code = 405
+        return res
 
 @bp.route('/<load_id>', methods=['GET', 'DELETE'])
 def loads_get_delete(load_id):
