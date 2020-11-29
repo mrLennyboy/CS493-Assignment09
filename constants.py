@@ -51,3 +51,6 @@ error_boat_type_invalid = {"Error": "Boat type description is invalid, needs to 
 
 # method not allowed error
 error_method_not_allowed = {"Error": "Method not allowed for this endpoint"}
+
+# boat length data type is not int
+error_boat_public_type = {"Error": "Boat public type is not bool type"}
