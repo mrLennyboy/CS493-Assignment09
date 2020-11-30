@@ -209,9 +209,23 @@ def boats_post_get():
 
         # query data store for boats
         query = client.query(kind=constants.boats)
+
+        # # If no JWT is provided or an invalid JWT is provided,
+        # # return all public boats and 200 status code
+        if owner_sub_valid == True:
+            query.add_filter("owner", "=", owner_sub)
+        else:
+            query.add_filter("public", "=", True)
+
+        # print(len(list(query.fetch())))
         
-        # <-------A
+        # number of total items that are in the collection from filtered or non-filtered query
+        content_length = len(list(query.fetch()))
+        print("content_length: " + str(content_length))
+
+        # # <-------A
         # results = list(query.fetch()) 
+        # print(results)
 
         # # If no JWT is provided or an invalid JWT is provided,
         # # return all public boats and 200 status code
@@ -238,8 +252,9 @@ def boats_post_get():
         #         # slow method to add to add only owner boats
         #         if e.get("owner") == owner_sub:
         #             results_filtered.append(e)
-        
-        # <-------------------
+        # # <------------------- A
+
+        # <------------------ B
         # pull limit and offset from argument of url, if none use 5 and 0.
         query_limit = int(request.args.get('limit', '5'))
         query_offset = int(request.args.get('offset', '0'))
@@ -266,20 +281,30 @@ def boats_post_get():
             e.update({"self": self_url})
             
         # Add load list to output
-        output = {"loads": results}
+        output = {"Collection_Total": content_length, "boats": results}
         if next_url:
             output["next"] = next_url
-        return (json.dumps(output), 200)
-    else:
-        return 'Method not recogonized'
-        # <------------------
 
-        # results = results_filtered
-        # # setting status code and content-type type with make_response function
-        # res = make_response(json.dumps(results))
-        # res.mimetype = 'application/json'
-        # res.status_code = 200
-        # return res
+        results = output
+        res = make_response(json.dumps(results))
+        res.mimetype = 'application/json'
+        res.status_code = 200
+        return res
+    else:
+        # return 'Method not recogonized'
+        res = make_response(json.dumps(constants.error_method_not_allowed))
+        res.mimetype = 'application/json'
+        res.status_code = 405
+        return res
+        # <------------------ B
+
+    #     # <------------------- A
+    #     results = results_filtered
+    #     # setting status code and content-type type with make_response function
+    #     res = make_response(json.dumps(results))
+    #     res.mimetype = 'application/json'
+    #     res.status_code = 200
+    #     return res
         
     # else:
     #     # return 'Method not recogonized'
@@ -287,6 +312,7 @@ def boats_post_get():
     #     res.mimetype = 'application/json'
     #     res.status_code = 405
     #     return res
+    #     # <------------------- A
 
 @bp.route('/<boat_id>', methods=['GET', 'DELETE', 'PATCH', 'PUT'])
 def boat_id_get_delete(boat_id):
