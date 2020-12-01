@@ -13,6 +13,12 @@ from google.auth.transport import requests
 
 client = datastore.Client()
 
+# files for constants and boat routes by blueprint
+# import constants
+# import boat
+# import owner
+import client_info
+
 # Python Blueprint template that creates Blueprint named 'loads', 2nd par __name__ the blueprint
 # know where it's defined, url_prefix will prepend to all URLs associated with the blueprint.
 bp = Blueprint('load', __name__, url_prefix='/loads')
@@ -58,21 +64,23 @@ def loads_post_get():
             # get request json
             content = request.get_json()
 
-            #owner of the boat, value of sub property in the JWT
-            owner_sub = get_sub_info()
+            # #owner of the boat, value of sub property in the JWT # 
+            # # <--------- not req since load is not protected, since not related to user
+            # owner_sub = get_sub_info()
 
-            #rush job error check for getting owner sub info
-            # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
-            if owner_sub == "Error: No Authorization in request header":
-                res = make_response({"Error": "No Authorization in request header"})
-                res.mimetype = 'application/json'
-                res.status_code = 401
-                return res
-            elif owner_sub == "Error: JWT is invalid":
-                res = make_response({"Error": "JWT is invalid"})
-                res.mimetype = 'application/json'
-                res.status_code = 401
-                return res
+            # #rush job error check for getting owner sub info
+            # # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
+            # if owner_sub == "Error: No Authorization in request header":
+            #     res = make_response({"Error": "No Authorization in request header"})
+            #     res.mimetype = 'application/json'
+            #     res.status_code = 401
+            #     return res
+            # elif owner_sub == "Error: JWT is invalid":
+            #     res = make_response({"Error": "JWT is invalid"})
+            #     res.mimetype = 'application/json'
+            #     res.status_code = 401
+            #     return res
+            # # <--------- not req since load is not protected, since not related to user
 
             # using comparison operator for key value check, True if all keys present
             if not (content.keys()) >= constants.check_keys_3:
@@ -80,8 +88,70 @@ def loads_post_get():
                 res.mimetype = 'application/json'
                 res.status_code = 400
                 return res
-                # return (json.dumps(constants.error_miss_attribute), 400)
+# <--------
+            # start of input validation
+            # check content description length and value type
+            if type(content["content"]) != str: 
+                res = make_response(json.dumps(constants.error_content_desc_type))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+ 
+            # for content length description random length
+            if len(content["content"]) > 129:
+                res = make_response(json.dumps(constants.error_content_desc_length))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
 
+            # # Maybe don't need since it'll be a description and can be anything as long as str and within limit
+            # # content description passes earlier type and length then check if all alpha or space
+            # # if string not all alpha or space then return error
+            # if not all(letter.isalpha() or letter.isspace() for letter in content["content"]):
+            #     res = make_response(json.dumps(constants.error_content_desc_invalid))
+            #     res.mimetype = 'application/json'
+            #     res.status_code = 400
+            #     return res
+
+            # check delivery date input data type as xx/xx/xxxx (MM/DD/YYYY) and delivery date char length
+            # <------------------- DATE TIME do this later for validdation, start is import datetime
+            if type(content["delivery_date"]) != str: 
+                res = make_response(json.dumps(constants.error_delivery_date_str))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+
+            # change to char length != 10
+            if len(content["delivery_date"]) > 10:
+                res = make_response(json.dumps(constants.error_delivery_date_length))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+
+            # figure out validation later, function first
+            # # load type passes earlier type and length then check if all alpha or space
+            # # if string not all alpha or space then return error
+            # if not all(letter.isalpha() or letter.isspace() for letter in content["delivery_date"]):
+            #     res = make_response(json.dumps(constants.error_delivery_date_invalid))
+            #     res.mimetype = 'application/json'
+            #     res.status_code = 400
+            #     return res
+            # <------------------- DATE TIME
+
+            # check weight data type and have int value below 100,000, unitless (assume in lb)
+            if type(content["weight"]) != int:
+                res = make_response(json.dumps(constants.error_load_weight_type))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+
+            if content["weight"] > 100000 or content["weight"] < 0:
+                res = make_response(json.dumps(constants.error_load_weight_limit))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+
+# <--------
             # creat datastore entity
             new_load = datastore.entity.Entity(key=client.key(constants.loads))
 
@@ -95,8 +165,11 @@ def loads_post_get():
             self_url = str(request.base_url) + '/' + str(new_load.key.id)
             # update new_load json with id and self url
             new_load.update({"id": str(new_load.key.id), "self": self_url})
-            #return tuple of new_load json string and status code 201
-            return (json.dumps(new_load), 201)
+            # setting status code and content-type type with make_response function
+            res = make_response(json.dumps(new_load))
+            res.mimetype = 'application/json'
+            res.status_code = 201
+            return res
 
         else: #else statement for request.accept_mimetype text/html type
             # return "This client doesn't accept application/json" as text/html
@@ -110,7 +183,7 @@ def loads_post_get():
         # pagination by w04 math implementation
         query = client.query(kind=constants.loads)
         # pull limit and offset from argument of url, if none use 3 and 0.
-        query_limit = int(request.args.get('limit', '3'))
+        query_limit = int(request.args.get('limit', '5'))
         query_offset = int(request.args.get('offset', '0'))
         # call query.fetch to set the query to start at a particular point and limit of boat entity
         load_iterator = query.fetch(limit=query_limit, offset=query_offset)
@@ -138,7 +211,12 @@ def loads_post_get():
         output = {"loads": results}
         if next_url:
             output["next"] = next_url
-        return (json.dumps(output), 200)
+
+        results = output
+        res = make_response(json.dumps(results))
+        res.mimetype = 'application/json'
+        res.status_code = 200
+        return res
     else:
         # return 'Method not recogonized'
         res = make_response(json.dumps(constants.error_method_not_allowed))
@@ -147,7 +225,7 @@ def loads_post_get():
         return res
 
 @bp.route('/<load_id>', methods=['GET', 'DELETE'])
-def loads_get_delete(load_id):
+def loads_get_delete_patch_put(load_id):
     if request.method == 'GET':
         load_key = client.key(constants.loads, int(load_id))
         loads = client.get(key=load_key)

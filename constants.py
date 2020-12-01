@@ -52,5 +52,44 @@ error_boat_type_invalid = {"Error": "Boat type description is invalid, needs to 
 # method not allowed error
 error_method_not_allowed = {"Error": "Method not allowed for this endpoint"}
 
-# boat length data type is not int
+# boat public data type is not int
 error_boat_public_type = {"Error": "Boat public type is not bool type"}
+
+# load content description data type is not string type
+error_content_desc_type = {"Error": "Load content description data type is not str type"}
+
+# content description length exceeds char length 128 (400)
+error_content_desc_length = {"Error": "Load description length is greater than 128 characters in length"}
+
+# load description input val for content is invalid. Should be only alpha char and space, no special char or nums
+error_content_desc_invalid = {"Error": "Load description is invalid, needs to be only alpha characters and spaces."}
+
+# check delivery date input data type as xx/xx/xxxx (MM/DD/YYYY) and delivery date char length
+error_delivery_date_str = {"Error": "Delivery date type is not str type"}
+
+# char length for delivery date shall be 10 char with num and special char no less or greater
+error_delivery_date_length = {"Error": "Delivery date char length is to 10 char length"}
+
+# load type input val for delivery date is invalid. Should be only alpha char and space, no special char or nums
+error_delivery_date_invalid = {"Error": "Delivery date is invalid, needs to be MM/DD/YYYY format"}
+
+# load weight data type is not int
+error_load_weight_type = {"Error": "Load weight data type is not int type"}
+
+# load weight is out of range 0 - 100,000 lbs
+error_load_weight_limit = {"Error": "Load weight is out of range, it can not be less than 0 or greater than 100,000 lbs"}
+
+# No load with load #id
+error_miss_loadID = {"Error": "No load with this load_id exists"}
+
+# Load or boat does not exist
+error_miss_load_boat = {"Error": "The specified boat and/or load does not exist"}
+
+# Load already assigned to a boat
+error_load_already_assigned = {"Error": "The load has already been assigned to a boat"}
+
+# The boat data does not match load carrier data for removal
+error_miss_boat_load_del = {"Error": "No boat with this boat_id is carrying this load with this load_id"}
+
+# The load data does not match boat data for removal
+error_miss_load_boat_del = {"Error": "No load with this load_id is associated with the boat and this boat_id"}
