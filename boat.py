@@ -14,9 +14,6 @@ from google.auth.transport import requests
 client = datastore.Client()
 
 # files for constants and boat routes by blueprint
-# import constants
-# import boat
-# import owner
 import client_info
 
 # Python Blueprint template that creates Blueprint named 'boat', 2nd par __name__ the blueprint

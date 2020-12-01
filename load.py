@@ -14,9 +14,6 @@ from google.auth.transport import requests
 client = datastore.Client()
 
 # files for constants and boat routes by blueprint
-# import constants
-# import boat
-# import owner
 import client_info
 
 # Python Blueprint template that creates Blueprint named 'loads', 2nd par __name__ the blueprint
@@ -182,6 +179,10 @@ def loads_post_get():
     elif request.method == 'GET':
         # pagination by w04 math implementation
         query = client.query(kind=constants.loads)
+        
+        # number of total items that are in the collection from filtered or non-filtered query
+        content_length = len(list(query.fetch()))
+
         # pull limit and offset from argument of url, if none use 3 and 0.
         query_limit = int(request.args.get('limit', '5'))
         query_offset = int(request.args.get('offset', '0'))
@@ -208,7 +209,7 @@ def loads_post_get():
             e.update({"self": self_url})
             
         # Add load list to output
-        output = {"loads": results}
+        output = {"Collection_Total": content_length, "loads": results}
         if next_url:
             output["next"] = next_url
 
@@ -224,7 +225,7 @@ def loads_post_get():
         res.status_code = 405
         return res
 
-@bp.route('/<load_id>', methods=['GET', 'DELETE'])
+@bp.route('/<load_id>', methods=['GET', 'DELETE', 'PATCH', 'PUT'])
 def loads_get_delete_patch_put(load_id):
     if request.method == 'GET':
         load_key = client.key(constants.loads, int(load_id))
@@ -241,8 +242,13 @@ def loads_get_delete_patch_put(load_id):
         # build self_url from request url
         self_url = str(request.base_url)
         loads.update({"id": str(loads.key.id), "self": self_url})
-        results = json.dumps(loads)
-        return (results, 200)
+        # results = json.dumps(loads)
+        results = loads
+        res = make_response(json.dumps(results))
+        res.mimetype = 'application/json'
+        res.status_code = 200
+        return res
+        # return (results, 200)
     
     elif request.method == 'DELETE':
         load_key = client.key(constants.loads, int(load_id))
@@ -272,5 +278,270 @@ def loads_get_delete_patch_put(load_id):
                         break
         #return nothing except 204 status code
         return ('', 204)
+
+    elif request.method == 'PATCH':
+        # check to see if application/json is listed in Accept header
+        if 'application/json' in request.accept_mimetypes:
+
+            load_key = client.key(constants.loads, int(load_id))
+            edit_loads = client.get(key=load_key)
+
+            # if loads entity is nonetype return error message and status code
+            if edit_loads is None:
+                res = make_response(json.dumps(constants.error_miss_loadID))
+                res.mimetype = 'application/json'
+                res.status_code = 404
+                return res
+
+            # check if request is json
+            if not request.is_json:
+                # return simple status code for unsupported media type (want JSON)
+                res = make_response(json.dumps(constants.error_unsupported_media_type))
+                res.mimetype = 'application/json'
+                res.status_code = 415
+                return res
+
+            # get request json
+            content = request.get_json()
+
+            # iterate throguh content keys to check if there are matchs to constant keys
+            # increament for tracking and append to list. Ignoring race conditions of duplicate keys
+            key_match_count = 0
+            key_match_list = []
+            for key_check in content.keys():
+                if key_check in constants.check_keys_3:
+                    key_match_count += 1
+                    key_match_list.append(key_check)
+
+            if key_match_count == 0:
+                res = make_response(json.dumps(constants.error_miss_attribute))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+
+            # input validation for keys that passed, not elegant
+            for value_check in key_match_list:
+                # check boat name length and value type
+                if value_check == 'content':
+                    # check content description length and value type
+                    if type(content["name"]) != str:
+                        res = make_response(json.dumps(constants.error_content_desc_type))
+                        res.mimetype = 'application/json'
+                        res.status_code = 400
+                        return res 
+
+                    # for content length description random length
+                    if len(content["content"]) > 129:
+                        res = make_response(json.dumps(constants.error_content_desc_length))
+                        res.mimetype = 'application/json'
+                        res.status_code = 400
+                        return res 
+
+                    # # boat name passes earlier type and length then check if all alpha or space
+                    # # if string not all alpha or space then return error
+                    # if not all(letter.isalpha() or letter.isspace() for letter in content["name"]):
+                    #     res = make_response(json.dumps(constants.error_boat_name_invalid))
+                    #     res.mimetype = 'application/json'
+                    #     res.status_code = 400
+                    #     return res 
+
+                elif value_check == 'delivery_date':
+                    # check delivery date input data type as xx/xx/xxxx (MM/DD/YYYY) and delivery date char length
+                    # <------------------- DATE TIME do this later for validdation, start is import datetime
+                    if type(content["delivery_date"]) != str: 
+                        res = make_response(json.dumps(constants.error_delivery_date_str))
+                        res.mimetype = 'application/json'
+                        res.status_code = 400
+                        return res
+
+                    # change to char length != 10
+                    if len(content["delivery_date"]) > 10:
+                        res = make_response(json.dumps(constants.error_delivery_date_length))
+                        res.mimetype = 'application/json'
+                        res.status_code = 400
+                        return res
+
+                    # figure out validation later, function first
+                    # # load type passes earlier type and length then check if all alpha or space
+                    # # if string not all alpha or space then return error
+                    # if not all(letter.isalpha() or letter.isspace() for letter in content["delivery_date"]):
+                    #     res = make_response(json.dumps(constants.error_delivery_date_invalid))
+                    #     res.mimetype = 'application/json'
+                    #     res.status_code = 400
+                    #     return res
+                    # <------------------- DATE TIME
+                
+                elif value_check == 'weight':
+                    # check weight data type and have int value below 100,000, unitless (assume in lb)
+                    if type(content["weight"]) != int:
+                        res = make_response(json.dumps(constants.error_load_weight_type))
+                        res.mimetype = 'application/json'
+                        res.status_code = 400
+                        return res
+
+                    if content["weight"] > 100000 or content["weight"] < 0:
+                        res = make_response(json.dumps(constants.error_load_weight_limit))
+                        res.mimetype = 'application/json'
+                        res.status_code = 400
+                        return res
+
+                # elif value_check == 'public':
+                #     # check public data type, needs to be bool.
+                #     if type(content["public"]) != bool:
+                #         res = make_response(json.dumps(constants.error_boat_public_type))
+                #         res.mimetype = 'application/json'
+                #         res.status_code = 400
+                #         return res 
+
+            # Add entity comparator to check what subset of attributes changed
+            # update entity values with for loop and if statement that iterates throguh list
+            for value_check in key_match_list:
+                if edit_loads[value_check] != content[value_check]:
+                    edit_loads.update({value_check: content[value_check]})
+
+            # update existing entity to datastore
+            client.put(edit_loads)
+            # build self_url from request info
+            self_url = str(request.base_url)
+            # update edit_boats json with id and self url
+            edit_loads.update({"id": edit_loads.key.id, "self": self_url})
+            # setting status code and content-type type with make_response function
+            res = make_response(json.dumps(edit_loads))
+            res.mimetype = 'application/json'
+            res.status_code = 200
+            # print(res.mimetype)
+            return res
+
+        else: #else statement for request.accept_mimetype text/html type
+            # return "This client doesn't accept application/json" as text/html
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
+            res.mimetype = 'application/json'
+            res.status_code = 406
+            return res
+
+    elif request.method == 'PUT':
+         # check to see if application/json is listed in Accept header
+        if 'application/json' in request.accept_mimetypes:
+
+            load_key = client.key(constants.loads, int(load_id))
+            edit_loads = client.get(key=load_key)
+
+            # if loads entity is nonetype return error message and status code
+            if edit_loads is None:
+                res = make_response(json.dumps(constants.error_miss_loadID))
+                res.mimetype = 'application/json'
+                res.status_code = 404
+                return res
+
+            # check if request is json
+            if not request.is_json:
+                # return simple status code for unsupported media type (want JSON)
+                res = make_response(json.dumps(constants.error_unsupported_media_type))
+                res.mimetype = 'application/json'
+                res.status_code = 415
+                return res
+
+            # get request json
+            content = request.get_json()
+
+            # using comparison operator for key value check, True if all keys present
+            if not (content.keys()) >= constants.check_keys_3:
+                res = make_response(json.dumps(constants.error_miss_attribute))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+# <--------
+            # start of input validation
+            # check content description length and value type
+            if type(content["content"]) != str: 
+                res = make_response(json.dumps(constants.error_content_desc_type))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+ 
+            # for content length description random length
+            if len(content["content"]) > 129:
+                res = make_response(json.dumps(constants.error_content_desc_length))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+
+            # # Maybe don't need since it'll be a description and can be anything as long as str and within limit
+            # # content description passes earlier type and length then check if all alpha or space
+            # # if string not all alpha or space then return error
+            # if not all(letter.isalpha() or letter.isspace() for letter in content["content"]):
+            #     res = make_response(json.dumps(constants.error_content_desc_invalid))
+            #     res.mimetype = 'application/json'
+            #     res.status_code = 400
+            #     return res
+
+            # check delivery date input data type as xx/xx/xxxx (MM/DD/YYYY) and delivery date char length
+            # <------------------- DATE TIME do this later for validdation, start is import datetime
+            if type(content["delivery_date"]) != str: 
+                res = make_response(json.dumps(constants.error_delivery_date_str))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+
+            # change to char length != 10
+            if len(content["delivery_date"]) > 10:
+                res = make_response(json.dumps(constants.error_delivery_date_length))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+
+            # figure out validation later, function first
+            # # load type passes earlier type and length then check if all alpha or space
+            # # if string not all alpha or space then return error
+            # if not all(letter.isalpha() or letter.isspace() for letter in content["delivery_date"]):
+            #     res = make_response(json.dumps(constants.error_delivery_date_invalid))
+            #     res.mimetype = 'application/json'
+            #     res.status_code = 400
+            #     return res
+            # <------------------- DATE TIME
+
+            # check weight data type and have int value below 100,000, unitless (assume in lb)
+            if type(content["weight"]) != int:
+                res = make_response(json.dumps(constants.error_load_weight_type))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+
+            if content["weight"] > 100000 or content["weight"] < 0:
+                res = make_response(json.dumps(constants.error_load_weight_limit))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
+
+# <--------
+
+            # update entity values
+            edit_loads.update({"content": content["content"], "delivery_date": content["delivery_date"],
+            "weight": content["weight"]})
+            # update existing entity as put to datastore
+            client.put(edit_loads)
+            # build self_url from request info
+            self_url = str(request.base_url)
+            # update edit_boats json with id and self url
+            edit_loads.update({"id": edit_loads.key.id, "self": self_url})
+            # setting status code and content-type type with make_response function
+            res = make_response(json.dumps(edit_loads))
+            res.headers.set('Content-Type', 'application/json')
+            res.headers.set('Location', self_url)
+            res.status_code = 303 # <-----------change code to 200?
+            # print(res.mimetype) # <-------- response type fix?
+            return res
+
+        else: #else statement for request.accept_mimetype text/html type
+            # return "This client doesn't accept application/json" as text/html
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
+            res.mimetype = 'application/json'
+            res.status_code = 406
+            return res
+
     else:
-        return 'Method not recognoized'
+        # return 'Method not recogonized'
+        res = make_response(json.dumps(constants.error_method_not_allowed))
+        res.mimetype = 'application/json'
+        res.status_code = 405
+        return res
