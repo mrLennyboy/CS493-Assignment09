@@ -236,9 +236,6 @@ def boats_post_get():
         else:
             next_url = None
 
-        # print(results)
-        # print("\n")
-
         for e in results:
             e["id"] = str(e.key.id)
              # build self_url from request info and boat entity key id
@@ -248,10 +245,11 @@ def boats_post_get():
             if e["loads"]:
                 # iterate loads list and adds self
                 for cargo_item in e["loads"]:
+                    load_key = client.key(constants.loads, int(cargo_item["id"]))
+                    loads = client.get(key=load_key)
                     self_url_cargo = str(request.url_root) + 'loads/' + cargo_item["id"]
-                    cargo_item.update({"self": self_url_cargo})
-
-        # print(results)
+                    cargo_item.update({"self": self_url_cargo, "carrier": loads["carrier"], 
+                                       "content": loads["content"]})
 
         # Add boat list to output
         output = {"Collection_Total": content_length, "boats": results}
@@ -304,7 +302,6 @@ def boat_id_get_delete(boat_id):
                 # cargo_item.update({"carrier": loads["carrier"]})
                 cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"]),
                                    "carrier": loads["carrier"], "content": loads["content"]})
-
 
         self_url = str(request.base_url)
         boats.update({"id": str(boats.key.id), "self": self_url})

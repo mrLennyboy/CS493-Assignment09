@@ -101,15 +101,6 @@ def loads_post_get():
                 res.status_code = 400
                 return res
 
-            # # Maybe don't need since it'll be a description and can be anything as long as str and within limit
-            # # content description passes earlier type and length then check if all alpha or space
-            # # if string not all alpha or space then return error
-            # if not all(letter.isalpha() or letter.isspace() for letter in content["content"]):
-            #     res = make_response(json.dumps(constants.error_content_desc_invalid))
-            #     res.mimetype = 'application/json'
-            #     res.status_code = 400
-            #     return res
-
             # check delivery date input data type as xx/xx/xxxx (MM/DD/YYYY) and delivery date char length
             # <------------------- DATE TIME do this later for validdation, start is import datetime
             if type(content["delivery_date"]) != str: 
@@ -339,14 +330,6 @@ def loads_get_delete_patch_put(load_id):
                         res.status_code = 400
                         return res 
 
-                    # # boat name passes earlier type and length then check if all alpha or space
-                    # # if string not all alpha or space then return error
-                    # if not all(letter.isalpha() or letter.isspace() for letter in content["name"]):
-                    #     res = make_response(json.dumps(constants.error_boat_name_invalid))
-                    #     res.mimetype = 'application/json'
-                    #     res.status_code = 400
-                    #     return res 
-
                 elif value_check == 'delivery_date':
                     # check delivery date input data type as xx/xx/xxxx (MM/DD/YYYY) and delivery date char length
                     # <------------------- DATE TIME do this later for validdation, start is import datetime
@@ -386,14 +369,6 @@ def loads_get_delete_patch_put(load_id):
                         res.mimetype = 'application/json'
                         res.status_code = 400
                         return res
-
-                # elif value_check == 'public':
-                #     # check public data type, needs to be bool.
-                #     if type(content["public"]) != bool:
-                #         res = make_response(json.dumps(constants.error_boat_public_type))
-                #         res.mimetype = 'application/json'
-                #         res.status_code = 400
-                #         return res 
 
             # Add entity comparator to check what subset of attributes changed
             # update entity values with for loop and if statement that iterates throguh list
