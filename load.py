@@ -207,6 +207,8 @@ def loads_post_get():
             self_url = str(request.base_url) + '/' + e["id"]
             # update new_load json with self url
             e.update({"self": self_url})
+
+        print(results)
             
         # Add load list to output
         output = {"Collection_Total": content_length, "loads": results}

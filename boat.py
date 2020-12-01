@@ -216,7 +216,7 @@ def boats_post_get():
         
         # number of total items that are in the collection from filtered or non-filtered query
         content_length = len(list(query.fetch()))
-        print("content_length: " + str(content_length))
+        # print("content_length: " + str(content_length))
 
         # pull limit and offset from argument of url, if none use 5 and 0.
         query_limit = int(request.args.get('limit', '5'))
@@ -236,15 +236,26 @@ def boats_post_get():
         else:
             next_url = None
 
+        # print(results)
+        # print("\n")
+
         for e in results:
             e["id"] = str(e.key.id)
              # build self_url from request info and boat entity key id
             self_url = str(request.base_url) + '/' + e["id"]
             # update new_load json with self url
             e.update({"self": self_url})
-            
+            if e["loads"]:
+                # iterate loads list and adds self
+                for cargo_item in e["loads"]:
+                    self_url_cargo = str(request.url_root) + 'loads/' + cargo_item["id"]
+                    cargo_item.update({"self": self_url_cargo})
+
+        # print(results)
+
         # Add boat list to output
         output = {"Collection_Total": content_length, "boats": results}
+        # output = {"boats": results}
         if next_url:
             output["next"] = next_url
 
@@ -287,7 +298,13 @@ def boat_id_get_delete(boat_id):
 
         if 'loads' in boats.keys():
             for cargo_item in boats["loads"]:
-                cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"])})
+                load_key = client.key(constants.loads, int(cargo_item["id"]))
+                loads = client.get(key=load_key)
+                # print(loads["carrier"])
+                # cargo_item.update({"carrier": loads["carrier"]})
+                cargo_item.update({"self": (str(request.url_root) + "loads/" + cargo_item["id"]),
+                                   "carrier": loads["carrier"], "content": loads["content"]})
+
 
         self_url = str(request.base_url)
         boats.update({"id": str(boats.key.id), "self": self_url})
