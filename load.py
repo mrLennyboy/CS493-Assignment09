@@ -110,13 +110,6 @@ def loads_post_get():
                 res.status_code = 400
                 return res
 
-            # # change to char length != 10
-            # if len(content["delivery_date"]) > 10:
-            #     res = make_response(json.dumps(constants.error_delivery_date_length))
-            #     res.mimetype = 'application/json'
-            #     res.status_code = 400
-            #     return res
-
             # check delivery_date datetime format mm/dd/yyyy
             try:
                 date = datetime.strptime(content["delivery_date"], "%m/%d/%Y")
@@ -218,6 +211,7 @@ def loads_post_get():
         res.status_code = 405
         return res
 
+# DELETE, PUT, and PATCH should be protected
 @bp.route('/<load_id>', methods=['GET', 'DELETE', 'PATCH', 'PUT'])
 def loads_get_delete_patch_put(load_id):
     if request.method == 'GET':

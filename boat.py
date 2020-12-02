@@ -92,8 +92,6 @@ def boats_post_get():
                 res.status_code = 401
                 return res
 
-            # print("The sub is: " + owner_sub)
-
             # using comparison operator for key value check, True if all keys present
             if not (content.keys()) >= constants.check_keys:
                 res = make_response(json.dumps(constants.error_miss_attribute))
@@ -198,69 +196,77 @@ def boats_post_get():
             return res
 
     elif request.method == 'GET':
-        #owner of the boat, value of sub property in the JWT
-        owner_sub = get_sub_info()
+        if 'application/json' in request.accept_mimetypes:
+            #owner of the boat, value of sub property in the JWT
+            owner_sub = get_sub_info()
 
-        # bool val if owner_sub is valid or not
-        owner_sub_valid = get_sub_valid(owner_sub)
+            # bool val if owner_sub is valid or not
+            owner_sub_valid = get_sub_valid(owner_sub)
 
-        # query data store for boats
-        query = client.query(kind=constants.boats)
+            # query data store for boats
+            query = client.query(kind=constants.boats)
 
-        # # If no JWT is provided or an invalid JWT is provided,
-        # # return all public boats and 200 status code
-        if owner_sub_valid == True:
-            query.add_filter("owner", "=", owner_sub)
-        else:
-            query.add_filter("public", "=", True)
-        
-        # number of total items that are in the collection from filtered or non-filtered query
-        content_length = len(list(query.fetch()))
+            # # If no JWT is provided or an invalid JWT is provided,
+            # # return all public boats and 200 status code
+            if owner_sub_valid == True:
+                query.add_filter("owner", "=", owner_sub)
+            else:
+                query.add_filter("public", "=", True)
+            
+            # number of total items that are in the collection from filtered or non-filtered query
+            content_length = len(list(query.fetch()))
 
-        # pull limit and offset from argument of url, if none use 5 and 0.
-        query_limit = int(request.args.get('limit', '5'))
-        query_offset = int(request.args.get('offset', '0'))
-        # call query.fetch to set the query to start at a particular point and limit of boat entity
-        boat_iterator = query.fetch(limit=query_limit, offset=query_offset)
-        # get query pages attribute, iterator container to contain one page
-        pages = boat_iterator.pages
-        # list() constuctor returns list consisting of iterable items since parameter was an iterable
-        # next() retrieve next item from iterator
-        results = list(next(pages))
-        # iterator property (next_page_token) which is string we pass to query to start up where where left off
-        if boat_iterator.next_page_token:
-            # if next_page_token exists there are more pages left and need to calculat next URL
-            next_offset = query_offset + query_limit
-            next_url = request.base_url + "?limit=" + str(query_limit) + "&offset=" + str(next_offset)
-        else:
-            next_url = None
+            # pull limit and offset from argument of url, if none use 5 and 0.
+            query_limit = int(request.args.get('limit', '5'))
+            query_offset = int(request.args.get('offset', '0'))
+            # call query.fetch to set the query to start at a particular point and limit of boat entity
+            boat_iterator = query.fetch(limit=query_limit, offset=query_offset)
+            # get query pages attribute, iterator container to contain one page
+            pages = boat_iterator.pages
+            # list() constuctor returns list consisting of iterable items since parameter was an iterable
+            # next() retrieve next item from iterator
+            results = list(next(pages))
+            # iterator property (next_page_token) which is string we pass to query to start up where where left off
+            if boat_iterator.next_page_token:
+                # if next_page_token exists there are more pages left and need to calculat next URL
+                next_offset = query_offset + query_limit
+                next_url = request.base_url + "?limit=" + str(query_limit) + "&offset=" + str(next_offset)
+            else:
+                next_url = None
 
-        for e in results:
-            e["id"] = str(e.key.id)
-             # build self_url from request info and boat entity key id
-            self_url = str(request.base_url) + '/' + e["id"]
-            # update new_load json with self url
-            e.update({"self": self_url})
-            if e["loads"]:
-                # iterate loads list and adds self
-                for cargo_item in e["loads"]:
-                    load_key = client.key(constants.loads, int(cargo_item["id"]))
-                    loads = client.get(key=load_key)
-                    self_url_cargo = str(request.url_root) + 'loads/' + cargo_item["id"]
-                    cargo_item.update({"self": self_url_cargo, "carrier": loads["carrier"], 
-                                       "content": loads["content"]})
+            for e in results:
+                e["id"] = str(e.key.id)
+                # build self_url from request info and boat entity key id
+                self_url = str(request.base_url) + '/' + e["id"]
+                # update new_load json with self url
+                e.update({"self": self_url})
+                if e["loads"]:
+                    # iterate loads list and adds self
+                    for cargo_item in e["loads"]:
+                        load_key = client.key(constants.loads, int(cargo_item["id"]))
+                        loads = client.get(key=load_key)
+                        self_url_cargo = str(request.url_root) + 'loads/' + cargo_item["id"]
+                        cargo_item.update({"self": self_url_cargo, "carrier": loads["carrier"], 
+                                        "content": loads["content"]})
 
-        # Add boat list to output
-        output = {"Collection_Total": content_length, "boats": results}
-        # output = {"boats": results}
-        if next_url:
-            output["next"] = next_url
+            # Add boat list to output
+            output = {"Collection_Total": content_length, "boats": results}
+            # output = {"boats": results}
+            if next_url:
+                output["next"] = next_url
 
-        results = output
-        res = make_response(json.dumps(results))
-        res.mimetype = 'application/json'
-        res.status_code = 200
-        return res
+            results = output
+            res = make_response(json.dumps(results))
+            res.mimetype = 'application/json'
+            res.status_code = 200
+            return res
+
+        else: #else statement for request.accept_mimetype
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
+            res.mimetype = 'application/json'
+            res.status_code = 406
+            return res
+
     else:
         # return 'Method not recogonized'
         res = make_response(json.dumps(constants.error_method_not_allowed))
@@ -269,7 +275,7 @@ def boats_post_get():
         return res
 
 @bp.route('/<boat_id>', methods=['GET', 'DELETE', 'PATCH', 'PUT'])
-def boat_id_get_delete(boat_id):
+def boat_id_get_delete_patch_put(boat_id):
     if request.method == 'GET':
         #owner of the boat, value of sub property in the JWT
         owner_sub = get_sub_info()
@@ -521,7 +527,6 @@ def boat_id_get_delete(boat_id):
             return res
 
         else: #else statement for request.accept_mimetype
-            # return "This client doesn't accept application/json"
             res = make_response(json.dumps(constants.error_unsupported_accept_type))
             res.mimetype = 'application/json'
             res.status_code = 406
@@ -674,6 +679,12 @@ def boat_id_get_delete(boat_id):
             res.status_code = 303 # <-----------change code to 200?
             # print(res.mimetype) # <-------- response type fix?
             return res
+        
+        else: #else statement for request.accept_mimetype
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
+            res.mimetype = 'application/json'
+            res.status_code = 406
+            return res
 
     else:
         # return 'Method not recogonized'
@@ -682,6 +693,7 @@ def boat_id_get_delete(boat_id):
         res.status_code = 405
         return res
 
+# Assign or remove load from boat
 @bp.route('/<boat_id>/loads/<load_id>', methods=['PUT', 'DELETE'])
 def boats_loads_put_delete(boat_id, load_id):
     if request.method == 'PUT':
@@ -701,89 +713,130 @@ def boats_loads_put_delete(boat_id, load_id):
             res.status_code = 401
             return res
 
-        load_key = client.key(constants.loads, int(load_id))
-        loads = client.get(key=load_key)
+        # check to see if application/json is listed in Accept header
+        if 'application/json' in request.accept_mimetypes:
 
-        boat_key = client.key(constants.boats, int(boat_id))
-        boats = client.get(key=boat_key)
+            load_key = client.key(constants.loads, int(load_id))
+            loads = client.get(key=load_key)
 
-        # if boats or loads entity  doesnt exist return error message and status code
-        if loads is None or boats is None:
-            res = make_response(json.dumps(constants.error_miss_load_boat))
-            res.mimetype = 'application/json'
-            res.status_code = 404
-            return res
+            boat_key = client.key(constants.boats, int(boat_id))
+            boats = client.get(key=boat_key)
 
-        # if the load entity is already assigned to a boat then return 403 and error
-        elif loads["carrier"] is not None: 
-            res = make_response(json.dumps(constants.error_load_already_assigned))
-            res.mimetype = 'application/json'
-            res.status_code = 403
-            return res
-
-        loads.update({"carrier": {"id": boat_id, "name": boats["name"]}})
-        # put update loads entity
-        client.put(loads)
-        # pull loads list from boat
-        temp_list = boats["loads"]
-        loads_dict = {"id": load_id}
-        # append load dictionary to list
-        temp_list.append(loads_dict)
-        # datastore method update entity loads key
-        boats.update({"loads": temp_list})
-        # put updated boats entity
-        client.put(boats)
-        return ('', 204) #<-------------------- what should response be for PUT, probably the boat with load list
-
-    elif request.method =='DELETE':
-        load_key = client.key(constants.loads, int(load_id))
-        loads = client.get(key=load_key)
-
-        boat_key = client.key(constants.boats, int(boat_id))
-        boats = client.get(key=boat_key)
-
-        # if boats or loads entity  doesnt exist return error message and status code
-        if loads is None or boats is None:
-            # return (json.dumps(constants.error_miss_load_boat), 404)
-            res = make_response(json.dumps(constants.error_miss_load_boat))
-            res.mimetype = 'application/json'
-            res.status_code = 404
-            return res
-            
-        # if no load id matches in boat cargo then throw error
-        elif 'loads' in boats.keys():
-            load_count = 0
-            boat_key_num = len(boats["loads"])
-            for cargo_item in boats["loads"]:
-                if int(load_id) != cargo_item["id"]:
-                    load_count+1
-
-            if load_count >= boat_key_num:
-                res = make_response(json.dumps(constants.error_miss_load_boat_del))
+            # if boats or loads entity  doesnt exist return error message and status code
+            if loads is None or boats is None:
+                res = make_response(json.dumps(constants.error_miss_load_boat))
                 res.mimetype = 'application/json'
                 res.status_code = 404
                 return res
 
-        # check if boat_id matches carrier id in load,
-        # TypeError: 'NoneType' object is not subscriptable
-        if boat_id != loads["carrier"]["id"]:
-            res = make_response(json.dumps(constants.error_miss_boat_load_del))
+            # if the load entity is already assigned to a boat then return 403 and error
+            elif loads["carrier"] is not None: 
+                res = make_response(json.dumps(constants.error_load_already_assigned))
+                res.mimetype = 'application/json'
+                res.status_code = 403
+                return res
+
+            loads.update({"carrier": {"id": boat_id, "name": boats["name"]}})
+            # put update loads entity
+            client.put(loads)
+            # pull loads list from boat
+            temp_list = boats["loads"]
+            loads_dict = {"id": load_id}
+            # append load dictionary to list
+            temp_list.append(loads_dict)
+            # datastore method update entity loads key
+            boats.update({"loads": temp_list})
+            # put updated boats entity
+            client.put(boats)
+            return ('', 204) #<-------------------- what should response be for PUT, probably the boat with load list
+        
+        else: #else statement for request.accept_mimetype
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
             res.mimetype = 'application/json'
-            res.status_code = 404
-            return res      
+            res.status_code = 406
+            return res
 
-        # update load information and remove carrier info
-        loads.update({"carrier": None})
-        client.put(loads)
 
-        # search boat load list to search and delete dictionary of the load
-        boat_load_list_temp = boats["loads"]
+    elif request.method =='DELETE':
+        #owner of the boat, value of sub property in the JWT
+        owner_sub = get_sub_info()
 
-        # using list comprehension to delete dictionary in list, geeksforgeeks
-        filtered_list = [i for i in boat_load_list_temp if not (i['id'] == load_id)]
+        # rush job error check for getting owner sub info
+        # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
+        if owner_sub == "Error: No Authorization in request header":
+            res = make_response({"Error": "No Authorization in request header"})
+            res.mimetype = 'application/json'
+            res.status_code = 401
+            return res
+        elif owner_sub == "Error: JWT is invalid":
+            res = make_response({"Error": "JWT is invalid"})
+            res.mimetype = 'application/json'
+            res.status_code = 401
+            return res
 
-        # update the boat info when load removed the boat, input valid at begining
-        # boats.update({"loads": []})
-        boats.update({"loads": filtered_list})
-        client.put(boats)
-        return ('', 204)
+        # check to see if application/json is listed in Accept header
+        if 'application/json' in request.accept_mimetypes: 
+
+            load_key = client.key(constants.loads, int(load_id))
+            loads = client.get(key=load_key)
+
+            boat_key = client.key(constants.boats, int(boat_id))
+            boats = client.get(key=boat_key)
+
+            # if boats or loads entity  doesnt exist return error message and status code
+            if loads is None or boats is None:
+                # return (json.dumps(constants.error_miss_load_boat), 404)
+                res = make_response(json.dumps(constants.error_miss_load_boat))
+                res.mimetype = 'application/json'
+                res.status_code = 404
+                return res
+                
+            # if no load id matches in boat cargo then throw error
+            elif 'loads' in boats.keys():
+                load_count = 0
+                boat_key_num = len(boats["loads"])
+                for cargo_item in boats["loads"]:
+                    if int(load_id) != cargo_item["id"]:
+                        load_count+1
+
+                if load_count >= boat_key_num:
+                    res = make_response(json.dumps(constants.error_miss_load_boat_del))
+                    res.mimetype = 'application/json'
+                    res.status_code = 404
+                    return res
+
+            # check if boat_id matches carrier id in load,
+            # TypeError: 'NoneType' object is not subscriptable
+            if boat_id != loads["carrier"]["id"]:
+                res = make_response(json.dumps(constants.error_miss_boat_load_del))
+                res.mimetype = 'application/json'
+                res.status_code = 404
+                return res      
+
+            # update load information and remove carrier info
+            loads.update({"carrier": None})
+            client.put(loads)
+
+            # search boat load list to search and delete dictionary of the load
+            boat_load_list_temp = boats["loads"]
+
+            # using list comprehension to delete dictionary in list, geeksforgeeks
+            filtered_list = [i for i in boat_load_list_temp if not (i['id'] == load_id)]
+
+            # update the boat info when load removed the boat, input valid at begining
+            boats.update({"loads": filtered_list})
+            client.put(boats)
+            return ('', 204)
+
+        else: #else statement for request.accept_mimetype
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
+            res.mimetype = 'application/json'
+            res.status_code = 406
+            return res
+
+    else:
+        # return 'Method not recogonized'
+        res = make_response(json.dumps(constants.error_method_not_allowed))
+        res.mimetype = 'application/json'
+        res.status_code = 405
+        return res
