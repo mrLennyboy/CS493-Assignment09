@@ -216,7 +216,6 @@ def boats_post_get():
         
         # number of total items that are in the collection from filtered or non-filtered query
         content_length = len(list(query.fetch()))
-        # print("content_length: " + str(content_length))
 
         # pull limit and offset from argument of url, if none use 5 and 0.
         query_limit = int(request.args.get('limit', '5'))

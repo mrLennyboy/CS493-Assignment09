@@ -13,6 +13,8 @@ from google.auth.transport import requests
 
 client = datastore.Client()
 
+from datetime import datetime
+
 # files for constants and boat routes by blueprint
 import client_info
 
@@ -85,7 +87,7 @@ def loads_post_get():
                 res.mimetype = 'application/json'
                 res.status_code = 400
                 return res
-# <--------
+
             # start of input validation
             # check content description length and value type
             if type(content["content"]) != str: 
@@ -102,29 +104,28 @@ def loads_post_get():
                 return res
 
             # check delivery date input data type as xx/xx/xxxx (MM/DD/YYYY) and delivery date char length
-            # <------------------- DATE TIME do this later for validdation, start is import datetime
             if type(content["delivery_date"]) != str: 
                 res = make_response(json.dumps(constants.error_delivery_date_str))
                 res.mimetype = 'application/json'
                 res.status_code = 400
                 return res
 
-            # change to char length != 10
-            if len(content["delivery_date"]) > 10:
-                res = make_response(json.dumps(constants.error_delivery_date_length))
-                res.mimetype = 'application/json'
-                res.status_code = 400
-                return res
-
-            # figure out validation later, function first
-            # # load type passes earlier type and length then check if all alpha or space
-            # # if string not all alpha or space then return error
-            # if not all(letter.isalpha() or letter.isspace() for letter in content["delivery_date"]):
-            #     res = make_response(json.dumps(constants.error_delivery_date_invalid))
+            # # change to char length != 10
+            # if len(content["delivery_date"]) > 10:
+            #     res = make_response(json.dumps(constants.error_delivery_date_length))
             #     res.mimetype = 'application/json'
             #     res.status_code = 400
             #     return res
-            # <------------------- DATE TIME
+
+            # check delivery_date datetime format mm/dd/yyyy
+            try:
+                date = datetime.strptime(content["delivery_date"], "%m/%d/%Y")
+            except ValueError:
+                # return json.dumps({"Error":"Invalid date entered, date format needs to be mm/dd/yyyy."})
+                res = make_response(json.dumps(constants.error_delivery_date_format))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
 
             # check weight data type and have int value below 100,000, unitless (assume in lb)
             if type(content["weight"]) != int:
@@ -139,7 +140,6 @@ def loads_post_get():
                 res.status_code = 400
                 return res
 
-# <--------
             # creat datastore entity
             new_load = datastore.entity.Entity(key=client.key(constants.loads))
 
@@ -332,29 +332,28 @@ def loads_get_delete_patch_put(load_id):
 
                 elif value_check == 'delivery_date':
                     # check delivery date input data type as xx/xx/xxxx (MM/DD/YYYY) and delivery date char length
-                    # <------------------- DATE TIME do this later for validdation, start is import datetime
                     if type(content["delivery_date"]) != str: 
                         res = make_response(json.dumps(constants.error_delivery_date_str))
                         res.mimetype = 'application/json'
                         res.status_code = 400
                         return res
 
-                    # change to char length != 10
-                    if len(content["delivery_date"]) > 10:
-                        res = make_response(json.dumps(constants.error_delivery_date_length))
-                        res.mimetype = 'application/json'
-                        res.status_code = 400
-                        return res
-
-                    # figure out validation later, function first
-                    # # load type passes earlier type and length then check if all alpha or space
-                    # # if string not all alpha or space then return error
-                    # if not all(letter.isalpha() or letter.isspace() for letter in content["delivery_date"]):
-                    #     res = make_response(json.dumps(constants.error_delivery_date_invalid))
+                    # # change to char length != 10
+                    # if len(content["delivery_date"]) > 10:
+                    #     res = make_response(json.dumps(constants.error_delivery_date_length))
                     #     res.mimetype = 'application/json'
                     #     res.status_code = 400
                     #     return res
-                    # <------------------- DATE TIME
+
+                    # check delivery_date datetime format mm/dd/yyyy
+                    try:
+                        date = datetime.strptime(content["delivery_date"], "%m/%d/%Y")
+                    except ValueError:
+                        # return json.dumps({"Error":"Invalid date entered, date format needs to be mm/dd/yyyy."})
+                        res = make_response(json.dumps(constants.error_delivery_date_format))
+                        res.mimetype = 'application/json'
+                        res.status_code = 400
+                        return res
                 
                 elif value_check == 'weight':
                     # check weight data type and have int value below 100,000, unitless (assume in lb)
@@ -427,7 +426,7 @@ def loads_get_delete_patch_put(load_id):
                 res.mimetype = 'application/json'
                 res.status_code = 400
                 return res
-# <--------
+
             # start of input validation
             # check content description length and value type
             if type(content["content"]) != str: 
@@ -443,39 +442,29 @@ def loads_get_delete_patch_put(load_id):
                 res.status_code = 400
                 return res
 
-            # # Maybe don't need since it'll be a description and can be anything as long as str and within limit
-            # # content description passes earlier type and length then check if all alpha or space
-            # # if string not all alpha or space then return error
-            # if not all(letter.isalpha() or letter.isspace() for letter in content["content"]):
-            #     res = make_response(json.dumps(constants.error_content_desc_invalid))
-            #     res.mimetype = 'application/json'
-            #     res.status_code = 400
-            #     return res
-
             # check delivery date input data type as xx/xx/xxxx (MM/DD/YYYY) and delivery date char length
-            # <------------------- DATE TIME do this later for validdation, start is import datetime
             if type(content["delivery_date"]) != str: 
                 res = make_response(json.dumps(constants.error_delivery_date_str))
                 res.mimetype = 'application/json'
                 res.status_code = 400
                 return res
 
-            # change to char length != 10
-            if len(content["delivery_date"]) > 10:
-                res = make_response(json.dumps(constants.error_delivery_date_length))
-                res.mimetype = 'application/json'
-                res.status_code = 400
-                return res
-
-            # figure out validation later, function first
-            # # load type passes earlier type and length then check if all alpha or space
-            # # if string not all alpha or space then return error
-            # if not all(letter.isalpha() or letter.isspace() for letter in content["delivery_date"]):
-            #     res = make_response(json.dumps(constants.error_delivery_date_invalid))
+            # # change to char length != 10
+            # if len(content["delivery_date"]) > 10:
+            #     res = make_response(json.dumps(constants.error_delivery_date_length))
             #     res.mimetype = 'application/json'
             #     res.status_code = 400
             #     return res
-            # <------------------- DATE TIME
+
+            # check delivery_date datetime format mm/dd/yyyy
+            try:
+                date = datetime.strptime(content["delivery_date"], "%m/%d/%Y")
+            except ValueError:
+                # return json.dumps({"Error":"Invalid date entered, date format needs to be mm/dd/yyyy."})
+                res = make_response(json.dumps(constants.error_delivery_date_format))
+                res.mimetype = 'application/json'
+                res.status_code = 400
+                return res
 
             # check weight data type and have int value below 100,000, unitless (assume in lb)
             if type(content["weight"]) != int:
@@ -489,8 +478,6 @@ def loads_get_delete_patch_put(load_id):
                 res.mimetype = 'application/json'
                 res.status_code = 400
                 return res
-
-# <--------
 
             # update entity values
             edit_loads.update({"content": content["content"], "delivery_date": content["delivery_date"],

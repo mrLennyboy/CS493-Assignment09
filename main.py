@@ -34,19 +34,18 @@ app.register_blueprint(load.bp)
 
 # These should be copied from an OAuth2 Credential section at
 # https://console.cloud.google.com/apis/credentials
-# <--Make more secret later!
-client_id = r'153129745149-jn0an4tjr2t7nslud3qm51th2e5087ma.apps.googleusercontent.com'
-client_secret = r'YgnCx3xxywKGPN7hjPF9Km1A'
+client_id = client_info.CLIENT_ID
+client_secret = client_info.CLIENT_SECRET
 
 # This is the page that you will use to decode and collect the info from
 # the Google authentication flow
-redirect_uri = 'http://127.0.0.1:8080/oauth' # for local only
-# redirect_uri = 'https://hw07-wongjasp.wl.r.appspot.com/oauth'
+redirect_uri = client_info.REDIRECT_URI
 
 # These let us get basic info to identify a user and not much else
 # they are part of the Google People API
 scope = ['https://www.googleapis.com/auth/userinfo.email',
              'https://www.googleapis.com/auth/userinfo.profile', 'openid']
+
 oauth = OAuth2Session(client_id, redirect_uri=redirect_uri, scope=scope)
 
 # This link will redirect users to begin the OAuth flow with Google
@@ -68,8 +67,7 @@ def oauthroute():
         client_secret=client_secret)
     req = requests.Request()
 
-    id_info = id_token.verify_oauth2_token( 
-    token['id_token'], req, client_id)
+    id_info = id_token.verify_oauth2_token(token['id_token'], req, client_id)
 
     # input validation, check reg user id unique or not. Have to go through datastore entities list, can't use user_id as key check.
     query = client.query(kind=constants.reg_users)

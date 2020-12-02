@@ -70,8 +70,8 @@ error_delivery_date_str = {"Error": "Delivery date type is not str type"}
 # char length for delivery date shall be 10 char with num and special char no less or greater
 error_delivery_date_length = {"Error": "Delivery date char length is to 10 char length"}
 
-# load type input val for delivery date is invalid. Should be only alpha char and space, no special char or nums
-error_delivery_date_invalid = {"Error": "Delivery date is invalid, needs to be MM/DD/YYYY format"}
+# load type input val for delivery date is invalid. Should be format mm/dd/yyyy
+error_delivery_date_format = {"Error": "Delivery date is invalid, needs to be MM/DD/YYYY format"}
 
 # load weight data type is not int
 error_load_weight_type = {"Error": "Load weight data type is not int type"}
