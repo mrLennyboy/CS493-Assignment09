@@ -79,7 +79,7 @@ def oauthroute():
             match_count += 1
             break
     if match_count == 0:
-        # create datastore entity, to add to users endpoint
+        # create datastore entity to add to users endpoint
         new_reg_users = datastore.entity.Entity(key=client.key(constants.reg_users))
         # Update new entity with content data
         new_reg_users.update({"user_email": id_info.get("email"), "user_id": id_info.get('sub')})

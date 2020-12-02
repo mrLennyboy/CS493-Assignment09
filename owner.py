@@ -16,6 +16,17 @@ client = datastore.Client()
 
 import client_info
 
+# #################################################################################
+# owner endpoint inherited from HW07. Not sure if I want to keep it. 
+# GET /owners/:owner_id/boats
+# Return 200 status code and all public boats for the specified owner_id regardless 
+# of whether the request has a valid or invalid JWT or whether a JWT is missing.
+# If this owner doesn't have any public boats, the status code should still be 200 
+# even though there will be no boats in the response body. It is up to you what the 
+# response body contains in this case (an empty array might be simple, but your choice).
+# #################################################################################
+
+
 # Python Blueprint template that creates Blueprint named 'boat', 2nd par __name__ the blueprint
 # know where it's defined, url_prefix will prepend to all URLs associated with the blueprint.
 bp = Blueprint('owner', __name__, url_prefix='/owners')

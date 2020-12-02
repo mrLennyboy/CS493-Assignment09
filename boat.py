@@ -21,7 +21,7 @@ import client_info
 bp = Blueprint('boat', __name__, url_prefix='/boats')
 
 def get_sub_info():
-        # get sub info from JWT, owner of boat
+    # get sub info from JWT, owner of boat
     if 'Authorization' in request.headers:
         user_jwt = request.headers['Authorization']
         user_jwt = user_jwt.replace("Bearer ", "")
@@ -37,6 +37,8 @@ def get_sub_info():
     else:
         return "Error: No Authorization in request header"
 
+# For GET all boats, bool val if owner_sub is valid or not. If no JWT is provided 
+# or an invalid JWT is provided, return all public boats and 200 status code
 def get_sub_valid(sub_info):
     if sub_info == "Error: No Authorization in request header":
         return False
@@ -45,19 +47,20 @@ def get_sub_valid(sub_info):
     else:
         return True
 
-# def sub_return_status(sub_info): # <--figure out why not working
-#     if sub_info == "Error: No Authorization in request header":
-#         res = make_response({"Error": "No Authorization in request header"})
-#         res.mimetype = 'application/json'
-#         res.status_code = 401
-#         return res
-#     elif sub_info == "Error: JWT is invalid":
-#         res = make_response({"Error": "JWT is invalid"})
-#         res.mimetype = 'application/json'
-#         res.status_code = 401
-#         return res
-#     else:
-#         pass
+# error check for getting owner sub info
+def sub_return_status(sub_info):
+    if sub_info == "Error: No Authorization in request header":
+        res = make_response({"Error": "No Authorization in request header"})
+        res.mimetype = 'application/json'
+        res.status_code = 401
+        return res
+    elif sub_info == "Error: JWT is invalid":
+        res = make_response({"Error": "JWT is invalid"})
+        res.mimetype = 'application/json'
+        res.status_code = 401
+        return res
+    else:
+        pass
 
 
 @bp.route('', methods=['POST','GET'])
@@ -79,18 +82,24 @@ def boats_post_get():
             #owner of the boat, value of sub property in the JWT
             owner_sub = get_sub_info()
 
-            #rush job error check for getting owner sub info
-            # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
-            if owner_sub == "Error: No Authorization in request header":
-                res = make_response({"Error": "No Authorization in request header"})
-                res.mimetype = 'application/json'
-                res.status_code = 401
-                return res
-            elif owner_sub == "Error: JWT is invalid":
-                res = make_response({"Error": "JWT is invalid"})
-                res.mimetype = 'application/json'
-                res.status_code = 401
-                return res
+            # error check for getting owner sub info
+            res_auth_jwt = sub_return_status(owner_sub)
+            if res_auth_jwt:
+                return res_auth_jwt
+
+
+            # #rush job error check for getting owner sub info
+            # # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
+            # if owner_sub == "Error: No Authorization in request header":
+            #     res = make_response({"Error": "No Authorization in request header"})
+            #     res.mimetype = 'application/json'
+            #     res.status_code = 401
+            #     return res
+            # elif owner_sub == "Error: JWT is invalid":
+            #     res = make_response({"Error": "JWT is invalid"})
+            #     res.mimetype = 'application/json'
+            #     res.status_code = 401
+            #     return res
 
             # using comparison operator for key value check, True if all keys present
             if not (content.keys()) >= constants.check_keys:
@@ -203,6 +212,11 @@ def boats_post_get():
             # bool val if owner_sub is valid or not
             owner_sub_valid = get_sub_valid(owner_sub)
 
+            # # error check for getting owner sub info
+            # res_auth_jwt = sub_return_status(owner_sub)
+            # if res_auth_jwt:
+            #     return res_auth_jwt
+
             # query data store for boats
             query = client.query(kind=constants.boats)
 
@@ -280,18 +294,23 @@ def boat_id_get_delete_patch_put(boat_id):
         #owner of the boat, value of sub property in the JWT
         owner_sub = get_sub_info()
 
-        #rush job error check for getting owner sub info
-        # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
-        if owner_sub == "Error: No Authorization in request header":
-            res = make_response({"Error": "No Authorization in request header"})
-            res.mimetype = 'application/json'
-            res.status_code = 401
-            return res
-        elif owner_sub == "Error: JWT is invalid":
-            res = make_response({"Error": "JWT is invalid"})
-            res.mimetype = 'application/json'
-            res.status_code = 401
-            return res
+        # error check for getting owner sub info
+        res_auth_jwt = sub_return_status(owner_sub)
+        if res_auth_jwt:
+            return res_auth_jwt
+
+        # #rush job error check for getting owner sub info
+        # # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
+        # if owner_sub == "Error: No Authorization in request header":
+        #     res = make_response({"Error": "No Authorization in request header"})
+        #     res.mimetype = 'application/json'
+        #     res.status_code = 401
+        #     return res
+        # elif owner_sub == "Error: JWT is invalid":
+        #     res = make_response({"Error": "JWT is invalid"})
+        #     res.mimetype = 'application/json'
+        #     res.status_code = 401
+        #     return res
 
         boat_key = client.key(constants.boats, int(boat_id))
         boats = client.get(key=boat_key)
@@ -310,7 +329,6 @@ def boat_id_get_delete_patch_put(boat_id):
 
         self_url = str(request.base_url)
         boats.update({"id": str(boats.key.id), "self": self_url})
-        # results = json.dumps(boats)
         results = boats
         # setting status code and content-type type with make_response function
         res = make_response(json.dumps(results))
@@ -322,18 +340,23 @@ def boat_id_get_delete_patch_put(boat_id):
         #owner of the boat, value of sub property in the JWT
         owner_sub = get_sub_info()
 
-        # rush job error check for getting owner sub info
-        # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
-        if owner_sub == "Error: No Authorization in request header":
-            res = make_response({"Error": "No Authorization in request header"})
-            res.mimetype = 'application/json'
-            res.status_code = 401
-            return res
-        elif owner_sub == "Error: JWT is invalid":
-            res = make_response({"Error": "JWT is invalid"})
-            res.mimetype = 'application/json'
-            res.status_code = 401
-            return res
+        # error check for getting owner sub info
+        res_auth_jwt = sub_return_status(owner_sub)
+        if res_auth_jwt:
+            return res_auth_jwt
+
+        # # rush job error check for getting owner sub info
+        # # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
+        # if owner_sub == "Error: No Authorization in request header":
+        #     res = make_response({"Error": "No Authorization in request header"})
+        #     res.mimetype = 'application/json'
+        #     res.status_code = 401
+        #     return res
+        # elif owner_sub == "Error: JWT is invalid":
+        #     res = make_response({"Error": "JWT is invalid"})
+        #     res.mimetype = 'application/json'
+        #     res.status_code = 401
+        #     return res
 
         boat_key = client.key(constants.boats, int(boat_id))
         # get boat entity with the key requested
@@ -379,18 +402,23 @@ def boat_id_get_delete_patch_put(boat_id):
         #owner of the boat, value of sub property in the JWT
         owner_sub = get_sub_info()
 
-        #rush job error check for getting owner sub info
-        # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
-        if owner_sub == "Error: No Authorization in request header":
-            res = make_response({"Error": "No Authorization in request header"})
-            res.mimetype = 'application/json'
-            res.status_code = 401
-            return res
-        elif owner_sub == "Error: JWT is invalid":
-            res = make_response({"Error": "JWT is invalid"})
-            res.mimetype = 'application/json'
-            res.status_code = 401
-            return res
+        # error check for getting owner sub info
+        res_auth_jwt = sub_return_status(owner_sub)
+        if res_auth_jwt:
+            return res_auth_jwt
+
+        # #rush job error check for getting owner sub info
+        # # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
+        # if owner_sub == "Error: No Authorization in request header":
+        #     res = make_response({"Error": "No Authorization in request header"})
+        #     res.mimetype = 'application/json'
+        #     res.status_code = 401
+        #     return res
+        # elif owner_sub == "Error: JWT is invalid":
+        #     res = make_response({"Error": "JWT is invalid"})
+        #     res.mimetype = 'application/json'
+        #     res.status_code = 401
+        #     return res
 
         # check to see if application/json is listed in Accept header
         if 'application/json' in request.accept_mimetypes:
@@ -536,18 +564,23 @@ def boat_id_get_delete_patch_put(boat_id):
         #owner of the boat, value of sub property in the JWT
         owner_sub = get_sub_info()
 
-        #rush job error check for getting owner sub info
-        # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
-        if owner_sub == "Error: No Authorization in request header":
-            res = make_response({"Error": "No Authorization in request header"})
-            res.mimetype = 'application/json'
-            res.status_code = 401
-            return res
-        elif owner_sub == "Error: JWT is invalid":
-            res = make_response({"Error": "JWT is invalid"})
-            res.mimetype = 'application/json'
-            res.status_code = 401
-            return res
+        # error check for getting owner sub info
+        res_auth_jwt = sub_return_status(owner_sub)
+        if res_auth_jwt:
+            return res_auth_jwt
+
+        # #rush job error check for getting owner sub info
+        # # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
+        # if owner_sub == "Error: No Authorization in request header":
+        #     res = make_response({"Error": "No Authorization in request header"})
+        #     res.mimetype = 'application/json'
+        #     res.status_code = 401
+        #     return res
+        # elif owner_sub == "Error: JWT is invalid":
+        #     res = make_response({"Error": "JWT is invalid"})
+        #     res.mimetype = 'application/json'
+        #     res.status_code = 401
+        #     return res
 
         # check to see if application/json is listed in Accept header
         if 'application/json' in request.accept_mimetypes:
@@ -700,18 +733,23 @@ def boats_loads_put_delete(boat_id, load_id):
         #owner of the boat, value of sub property in the JWT
         owner_sub = get_sub_info()
 
-        #rush job error check for getting owner sub info
-        # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
-        if owner_sub == "Error: No Authorization in request header":
-            res = make_response({"Error": "No Authorization in request header"})
-            res.mimetype = 'application/json'
-            res.status_code = 401
-            return res
-        elif owner_sub == "Error: JWT is invalid":
-            res = make_response({"Error": "JWT is invalid"})
-            res.mimetype = 'application/json'
-            res.status_code = 401
-            return res
+        # error check for getting owner sub info
+        res_auth_jwt = sub_return_status(owner_sub)
+        if res_auth_jwt:
+            return res_auth_jwt
+
+        # #rush job error check for getting owner sub info
+        # # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
+        # if owner_sub == "Error: No Authorization in request header":
+        #     res = make_response({"Error": "No Authorization in request header"})
+        #     res.mimetype = 'application/json'
+        #     res.status_code = 401
+        #     return res
+        # elif owner_sub == "Error: JWT is invalid":
+        #     res = make_response({"Error": "JWT is invalid"})
+        #     res.mimetype = 'application/json'
+        #     res.status_code = 401
+        #     return res
 
         # check to see if application/json is listed in Accept header
         if 'application/json' in request.accept_mimetypes:
@@ -761,18 +799,23 @@ def boats_loads_put_delete(boat_id, load_id):
         #owner of the boat, value of sub property in the JWT
         owner_sub = get_sub_info()
 
-        # rush job error check for getting owner sub info
-        # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
-        if owner_sub == "Error: No Authorization in request header":
-            res = make_response({"Error": "No Authorization in request header"})
-            res.mimetype = 'application/json'
-            res.status_code = 401
-            return res
-        elif owner_sub == "Error: JWT is invalid":
-            res = make_response({"Error": "JWT is invalid"})
-            res.mimetype = 'application/json'
-            res.status_code = 401
-            return res
+        # error check for getting owner sub info
+        res_auth_jwt = sub_return_status(owner_sub)
+        if res_auth_jwt:
+            return res_auth_jwt
+
+        # # rush job error check for getting owner sub info
+        # # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
+        # if owner_sub == "Error: No Authorization in request header":
+        #     res = make_response({"Error": "No Authorization in request header"})
+        #     res.mimetype = 'application/json'
+        #     res.status_code = 401
+        #     return res
+        # elif owner_sub == "Error: JWT is invalid":
+        #     res = make_response({"Error": "JWT is invalid"})
+        #     res.mimetype = 'application/json'
+        #     res.status_code = 401
+        #     return res
 
         # check to see if application/json is listed in Accept header
         if 'application/json' in request.accept_mimetypes: 
@@ -783,21 +826,22 @@ def boats_loads_put_delete(boat_id, load_id):
             boat_key = client.key(constants.boats, int(boat_id))
             boats = client.get(key=boat_key)
 
-            # if boats or loads entity  doesnt exist return error message and status code
+            # if boats or loads entity doesnt exist return error message and status code
             if loads is None or boats is None:
                 # return (json.dumps(constants.error_miss_load_boat), 404)
                 res = make_response(json.dumps(constants.error_miss_load_boat))
                 res.mimetype = 'application/json'
                 res.status_code = 404
                 return res
-                
+
             # if no load id matches in boat cargo then throw error
+            # elif 'loads' in boats.keys():
             elif 'loads' in boats.keys():
                 load_count = 0
                 boat_key_num = len(boats["loads"])
                 for cargo_item in boats["loads"]:
-                    if int(load_id) != cargo_item["id"]:
-                        load_count+1
+                    if load_id != cargo_item["id"]:
+                        load_count += 1
 
                 if load_count >= boat_key_num:
                     res = make_response(json.dumps(constants.error_miss_load_boat_del))
