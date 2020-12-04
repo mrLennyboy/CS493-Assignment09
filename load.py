@@ -63,24 +63,6 @@ def loads_post_get():
             # get request json
             content = request.get_json()
 
-            # #owner of the boat, value of sub property in the JWT # 
-            # # <--------- not req since load is not protected, since not related to user
-            # owner_sub = get_sub_info()
-
-            # #rush job error check for getting owner sub info
-            # # sub_return_status(owner_sub) # <--figure out later if I have time, return not kicking out
-            # if owner_sub == "Error: No Authorization in request header":
-            #     res = make_response({"Error": "No Authorization in request header"})
-            #     res.mimetype = 'application/json'
-            #     res.status_code = 401
-            #     return res
-            # elif owner_sub == "Error: JWT is invalid":
-            #     res = make_response({"Error": "JWT is invalid"})
-            #     res.mimetype = 'application/json'
-            #     res.status_code = 401
-            #     return res
-            # # <--------- not req since load is not protected, since not related to user
-
             # using comparison operator for key value check, True if all keys present
             if not (content.keys()) >= constants.check_keys_3:
                 res = make_response(json.dumps(constants.error_miss_attribute))
@@ -229,13 +211,11 @@ def loads_get_delete_patch_put(load_id):
         # build self_url from request url
         self_url = str(request.base_url)
         loads.update({"id": str(loads.key.id), "self": self_url})
-        # results = json.dumps(loads)
         results = loads
         res = make_response(json.dumps(results))
         res.mimetype = 'application/json'
         res.status_code = 200
         return res
-        # return (results, 200)
     
     elif request.method == 'DELETE':
         load_key = client.key(constants.loads, int(load_id))
@@ -332,13 +312,6 @@ def loads_get_delete_patch_put(load_id):
                         res.status_code = 400
                         return res
 
-                    # # change to char length != 10
-                    # if len(content["delivery_date"]) > 10:
-                    #     res = make_response(json.dumps(constants.error_delivery_date_length))
-                    #     res.mimetype = 'application/json'
-                    #     res.status_code = 400
-                    #     return res
-
                     # check delivery_date datetime format mm/dd/yyyy
                     try:
                         date = datetime.strptime(content["delivery_date"], "%m/%d/%Y")
@@ -376,10 +349,14 @@ def loads_get_delete_patch_put(load_id):
             # update edit_boats json with id and self url
             edit_loads.update({"id": edit_loads.key.id, "self": self_url})
             # setting status code and content-type type with make_response function
-            res = make_response(json.dumps(edit_loads))
+            # res = make_response(json.dumps(edit_loads))
+            # res.mimetype = 'application/json'
+            # res.status_code = 200
+            res = make_response('')
             res.mimetype = 'application/json'
-            res.status_code = 200
-            # print(res.mimetype)
+            res.status_code = 204
+            return res
+
             return res
 
         else: #else statement for request.accept_mimetype text/html type
@@ -443,13 +420,6 @@ def loads_get_delete_patch_put(load_id):
                 res.status_code = 400
                 return res
 
-            # # change to char length != 10
-            # if len(content["delivery_date"]) > 10:
-            #     res = make_response(json.dumps(constants.error_delivery_date_length))
-            #     res.mimetype = 'application/json'
-            #     res.status_code = 400
-            #     return res
-
             # check delivery_date datetime format mm/dd/yyyy
             try:
                 date = datetime.strptime(content["delivery_date"], "%m/%d/%Y")
@@ -482,12 +452,16 @@ def loads_get_delete_patch_put(load_id):
             self_url = str(request.base_url)
             # update edit_boats json with id and self url
             edit_loads.update({"id": edit_loads.key.id, "self": self_url})
-            # setting status code and content-type type with make_response function
-            res = make_response(json.dumps(edit_loads))
-            res.headers.set('Content-Type', 'application/json')
-            res.headers.set('Location', self_url)
-            res.status_code = 303 # <-----------change code to 200?
-            # print(res.mimetype) # <-------- response type fix?
+            # # if I want to return response with payload
+            # res = make_response(json.dumps(edit_loads))
+            # res.mimetype = 'application/json'
+            # res.status_code = 200
+            # return res
+
+            # if I want to return no content response
+            res = make_response('')
+            res.mimetype = 'application/json'
+            res.status_code = 204
             return res
 
         else: #else statement for request.accept_mimetype text/html type

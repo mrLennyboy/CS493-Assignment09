@@ -100,7 +100,10 @@ def verify():
     id_info = id_token.verify_oauth2_token( 
     request.args['jwt'], req, client_id)
 
-    return repr(id_info) + "<br><br> the user is: " + id_info['sub']
+    res = make_response(json.dumps(id_info))
+    res.mimetype = 'application/json'
+    res.status_code = 200
+    return res
 
 # # Unprotected Endpoint that returns all users currently "registered" with the app in datastore
 @app.route('/users', methods=['GET'])
