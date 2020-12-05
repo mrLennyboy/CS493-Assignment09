@@ -282,9 +282,20 @@ def boat_id_get_delete_patch_put(boat_id):
         if 'application/json' in request.accept_mimetypes:
             boat_key = client.key(constants.boats, int(boat_id))
             boats = client.get(key=boat_key)
-            # if boats entity is nonetype return error message and status code
+            # if boat entity is nonetype (id doesn't exist) return error message and status code
             if boats is None:
-                return (json.dumps(constants.error_miss_bID), 404)
+                res = make_response(json.dumps(constants.error_miss_bID))
+                res.mimetype = 'application/json'
+                res.status_code = 403
+                return res
+
+            # compare boat ownership id's
+            # owner sub and boat owned by someone else
+            if owner_sub != boats.get("owner"):
+                res = make_response(json.dumps(constants.error_boat_owner_match))
+                res.mimetype = 'application/json'
+                res.status_code = 403
+                return res
 
             if 'loads' in boats.keys():
                 for cargo_item in boats["loads"]:
@@ -324,7 +335,7 @@ def boat_id_get_delete_patch_put(boat_id):
 
             # if boat entity is nonetype (id doesn't exist) return error message and status code
             if boats is None:
-                res = make_response(json.dumps({"Error": "Boat with this id does not exist"}))
+                res = make_response(json.dumps({constants.error_miss_bID}))
                 res.mimetype = 'application/json'
                 res.status_code = 403
                 return res
@@ -332,7 +343,7 @@ def boat_id_get_delete_patch_put(boat_id):
             # compare boat ownership id's
             # owner sub and boat owned by someone else
             if owner_sub != boats.get("owner"):
-                res = make_response(json.dumps({"Error": "Boat owner ID does not match"}))
+                res = make_response(json.dumps(constants.error_boat_owner_match))
                 res.mimetype = 'application/json'
                 res.status_code = 403
                 return res
@@ -354,8 +365,13 @@ def boat_id_get_delete_patch_put(boat_id):
                         edit_loads = client.get(key=load_key)
                         edit_loads.update({"carrier": None}) 
                         client.put(edit_loads)
-                        break
-            return ('', 204) # for delete no return body
+                        # break # <--- commented out since boat can have more than 1 load
+            # return ('', 204) # for delete no return body
+            # if I want to return no content response
+            res = make_response('')
+            res.mimetype = 'application/json'
+            res.status_code = 204
+            return res
 
         else: #else statement for request.accept_mimetype
             res = make_response(json.dumps(constants.error_unsupported_accept_type))
@@ -377,10 +393,19 @@ def boat_id_get_delete_patch_put(boat_id):
             boat_key = client.key(constants.boats, int(boat_id))
             edit_boats = client.get(key=boat_key)
             # if boats entity is nonetype return error message and status code
+            # if boat entity is nonetype (id doesn't exist) return error message and status code
             if edit_boats is None:
                 res = make_response(json.dumps(constants.error_miss_bID))
                 res.mimetype = 'application/json'
-                res.status_code = 404
+                res.status_code = 403
+                return res
+
+            # compare boat ownership id's
+            # owner sub and boat owned by someone else
+            if owner_sub != edit_boats.get("owner"):
+                res = make_response(json.dumps(constants.error_boat_owner_match))
+                res.mimetype = 'application/json'
+                res.status_code = 403
                 return res
 
             # check if request is json
@@ -488,10 +513,13 @@ def boat_id_get_delete_patch_put(boat_id):
                 for e in results:
                     # if the boat name is already assigned to a boat then return 403 and error
                     if e["name"] == content["name"]:
-                        res = make_response(json.dumps(constants.error_boat_name_exists))
-                        res.mimetype = 'application/json'
-                        res.status_code = 403
-                        return res
+                        # in case client perfers PUT to update same boat, error will be returned
+                        # when boat id is not the same as in endpoint.
+                        if str(e.key.id) != boat_id:
+                            res = make_response(json.dumps(constants.error_boat_name_exists))
+                            res.mimetype = 'application/json'
+                            res.status_code = 403
+                            return res
 
             # update existing entity to datastore
             client.put(edit_boats)
@@ -499,17 +527,16 @@ def boat_id_get_delete_patch_put(boat_id):
             self_url = str(request.base_url)
             # update edit_boats json with id and self url
             edit_boats.update({"id": edit_boats.key.id, "self": self_url})
-            # setting status code and content-type type with make_response function
-            res = make_response(json.dumps(edit_boats))
-            res.mimetype = 'application/json'
-            res.status_code = 200
-            # print(res.mimetype)
-            return res
-            # # if I want to return no content response
-            # res = make_response('')
+            # # setting status code and content-type type with make_response function
+            # res = make_response(json.dumps(edit_boats))
             # res.mimetype = 'application/json'
-            # res.status_code = 204
+            # res.status_code = 200
             # return res
+            # if I want to return no content response
+            res = make_response('')
+            res.mimetype = 'application/json'
+            res.status_code = 204
+            return res
 
         else: #else statement for request.accept_mimetype
             res = make_response(json.dumps(constants.error_unsupported_accept_type))
@@ -528,6 +555,23 @@ def boat_id_get_delete_patch_put(boat_id):
 
         # check to see if application/json is listed in Accept header
         if 'application/json' in request.accept_mimetypes:
+            boat_key = client.key(constants.boats, int(boat_id))
+            edit_boats = client.get(key=boat_key)
+            # if boat entity is nonetype (id doesn't exist) return error message and status code
+            if edit_boats is None:
+                res = make_response(json.dumps(constants.error_miss_bID))
+                res.mimetype = 'application/json'
+                res.status_code = 403
+                return res
+
+            # compare boat ownership id's
+            # owner sub and boat owned by someone else
+            if owner_sub != edit_boats.get("owner"):
+                res = make_response(json.dumps(constants.error_boat_owner_match))
+                res.mimetype = 'application/json'
+                res.status_code = 403
+                return res
+
             # check if request is json
             if not request.is_json:
                 # return simple status code for unsupported media type (want JSON)
@@ -622,15 +666,6 @@ def boat_id_get_delete_patch_put(boat_id):
                         res.status_code = 403
                         return res
 
-            boat_key = client.key(constants.boats, int(boat_id))
-            edit_boats = client.get(key=boat_key)
-            # if boats entity is nonetype return error message and status code
-            if edit_boats is None:
-                res = make_response(json.dumps(constants.error_miss_bID))
-                res.mimetype = 'application/json'
-                res.status_code = 404
-                return res
-
             # update entity values
             edit_boats.update({"name": content["name"], "type": content["type"],
             "length": content["length"]})
@@ -640,16 +675,16 @@ def boat_id_get_delete_patch_put(boat_id):
             self_url = str(request.base_url)
             # update edit_boats json with id and self url
             edit_boats.update({"id": edit_boats.key.id, "self": self_url})
-            # if I want to return response with payload
-            res = make_response(json.dumps(edit_boats))
-            res.mimetype = 'application/json'
-            res.status_code = 200
-            return res
-            # # if I want to return no content response
-            # res = make_response('')
+            # # if I want to return response with payload
+            # res = make_response(json.dumps(edit_boats))
             # res.mimetype = 'application/json'
-            # res.status_code = 204
+            # res.status_code = 200
             # return res
+            # if I want to return no content response # <---- switch over before submission
+            res = make_response('')
+            res.mimetype = 'application/json'
+            res.status_code = 204
+            return res
         
         else: #else statement for request.accept_mimetype
             res = make_response(json.dumps(constants.error_unsupported_accept_type))
@@ -781,7 +816,6 @@ def boats_loads_put_delete(boat_id, load_id):
             # update the boat info when load removed the boat, input valid at begining
             boats.update({"loads": filtered_list})
             client.put(boats)
-            # return ('', 204)
             res = make_response('')
             res.mimetype = 'application/json'
             res.status_code = 204

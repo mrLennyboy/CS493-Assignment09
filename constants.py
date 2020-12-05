@@ -16,7 +16,7 @@ error_miss_attribute = {"Error": "The request object is missing at least one of 
 error_miss_bID = {"Error": "No boat with this boat_id exists"}
 
 # Boat with name already exists
-error_boat_name_exists = {"Error": "This boat name already exists"}
+error_boat_name_exists = {"Error": "This boat name already exists"} 
 
 # unsupported accept type (406 Not Acceptable). Client requests medita type the server can't offer.
 error_unsupported_accept_type = {"Error": "Client requests media type the server can't offer"}
@@ -93,3 +93,6 @@ error_miss_boat_load_del = {"Error": "No boat with this boat_id is carrying this
 
 # The load data does not match boat data for removal, also load is not in boat
 error_miss_load_boat_del = {"Error": "No load with this load_id is associated with the boat and this boat_id"}
+
+# Boat owners do not match
+error_boat_owner_match = {"Error": "Boat owner ID does not match"}

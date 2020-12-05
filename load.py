@@ -143,49 +143,53 @@ def loads_post_get():
 
 
     elif request.method == 'GET':
-        # pagination by w04 math implementation
-        query = client.query(kind=constants.loads)
-        
-        # number of total items that are in the collection from filtered or non-filtered query
-        content_length = len(list(query.fetch()))
-
-        # pull limit and offset from argument of url, if none use 3 and 0.
-        query_limit = int(request.args.get('limit', '5'))
-        query_offset = int(request.args.get('offset', '0'))
-        # call query.fetch to set the query to start at a particular point and limit of boat entity
-        load_iterator = query.fetch(limit=query_limit, offset=query_offset)
-        # get query pages attribute, iterator container to contain one page
-        pages = load_iterator.pages
-        # list() constuctor returns list consisting of iterable items since parameter was an iterable
-        # next() retrieve next item from iterator
-        results = list(next(pages))
-        # iterator property (next_page_token) which is string we pass to query to start up where where left off
-        if load_iterator.next_page_token:
-            # if next_page_token exists there are more pages left and need to calculat next URL
-            next_offset = query_offset + query_limit
-            next_url = request.base_url + "?limit=" + str(query_limit) + "&offset=" + str(next_offset)
-        else:
-            next_url = None
-        
-        for e in results:
-            e["id"] = str(e.key.id)
-             # build self_url from request info and boat entity key id
-            self_url = str(request.base_url) + '/' + e["id"]
-            # update new_load json with self url
-            e.update({"self": self_url})
-
-        print(results)
+        if 'application/json' in request.accept_mimetypes:
+            # pagination by w04 math implementation
+            query = client.query(kind=constants.loads)
             
-        # Add load list to output
-        output = {"Collection_Total": content_length, "loads": results}
-        if next_url:
-            output["next"] = next_url
+            # number of total items that are in the collection from filtered or non-filtered query
+            content_length = len(list(query.fetch()))
 
-        results = output
-        res = make_response(json.dumps(results))
-        res.mimetype = 'application/json'
-        res.status_code = 200
-        return res
+            # pull limit and offset from argument of url, if none use 3 and 0.
+            query_limit = int(request.args.get('limit', '5'))
+            query_offset = int(request.args.get('offset', '0'))
+            # call query.fetch to set the query to start at a particular point and limit of boat entity
+            load_iterator = query.fetch(limit=query_limit, offset=query_offset)
+            # get query pages attribute, iterator container to contain one page
+            pages = load_iterator.pages
+            # list() constuctor returns list consisting of iterable items since parameter was an iterable
+            # next() retrieve next item from iterator
+            results = list(next(pages))
+            # iterator property (next_page_token) which is string we pass to query to start up where where left off
+            if load_iterator.next_page_token:
+                # if next_page_token exists there are more pages left and need to calculat next URL
+                next_offset = query_offset + query_limit
+                next_url = request.base_url + "?limit=" + str(query_limit) + "&offset=" + str(next_offset)
+            else:
+                next_url = None
+            
+            for e in results:
+                e["id"] = str(e.key.id)
+                # build self_url from request info and boat entity key id
+                self_url = str(request.base_url) + '/' + e["id"]
+                # update new_load json with self url
+                e.update({"self": self_url})
+                
+            # Add load list to output
+            output = {"Collection_Total": content_length, "loads": results}
+            if next_url:
+                output["next"] = next_url
+
+            results = output
+            res = make_response(json.dumps(results))
+            res.mimetype = 'application/json'
+            res.status_code = 200
+            return res
+        else: #else statement for request.accept_mimetype
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
+            res.mimetype = 'application/json'
+            res.status_code = 406
+            return res
     else:
         # return 'Method not recogonized'
         res = make_response(json.dumps(constants.error_method_not_allowed))
@@ -197,59 +201,73 @@ def loads_post_get():
 @bp.route('/<load_id>', methods=['GET', 'DELETE', 'PATCH', 'PUT'])
 def loads_get_delete_patch_put(load_id):
     if request.method == 'GET':
-        load_key = client.key(constants.loads, int(load_id))
-        loads = client.get(key=load_key)
-        # if loads entity is nonetype return error message and status code
-        if loads is None:
-            return(json.dumps(constants.error_miss_loadID), 404)
+        # check to see if application/json is listed in Accept header
+        if 'application/json' in request.accept_mimetypes:
+            load_key = client.key(constants.loads, int(load_id))
+            loads = client.get(key=load_key)
+            # if loads entity is nonetype return error message and status code
+            if loads is None:
+                return(json.dumps(constants.error_miss_loadID), 404)
 
-        # if 'carrier' not loads.keys():
-        if loads["carrier"] is not None:
-            # print(loads["carrier"])
-            loads["carrier"].update({"self": (str(request.url_root) + "boats/" + loads["carrier"]["id"])})
+            # if 'carrier' not loads.keys():
+            if loads["carrier"] is not None:
+                # print(loads["carrier"])
+                loads["carrier"].update({"self": (str(request.url_root) + "boats/" + loads["carrier"]["id"])})
 
-        # build self_url from request url
-        self_url = str(request.base_url)
-        loads.update({"id": str(loads.key.id), "self": self_url})
-        results = loads
-        res = make_response(json.dumps(results))
-        res.mimetype = 'application/json'
-        res.status_code = 200
-        return res
+            # build self_url from request url
+            self_url = str(request.base_url)
+            loads.update({"id": str(loads.key.id), "self": self_url})
+            results = loads
+            res = make_response(json.dumps(results))
+            res.mimetype = 'application/json'
+            res.status_code = 200
+            return res
+        else: #else statement for request.accept_mimetype
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
+            res.mimetype = 'application/json'
+            res.status_code = 406
+            return res
     
     elif request.method == 'DELETE':
-        load_key = client.key(constants.loads, int(load_id))
-        # get load entity with the key requested
-        loads = client.get(key=load_key)
-        # if load entity is noneType (id doesn't exist) return error message and status code
-        if loads is None:
-            return (json.dumps(constants.error_miss_loadID), 404)
-        # delete load by id on datastore side
-        client.delete(load_key)
+        # check to see if application/json is listed in Accept header
+        if 'application/json' in request.accept_mimetypes:
+            load_key = client.key(constants.loads, int(load_id))
+            # get load entity with the key requested
+            loads = client.get(key=load_key)
+            # if load entity is noneType (id doesn't exist) return error message and status code
+            if loads is None:
+                return (json.dumps(constants.error_miss_loadID), 404)
+            # delete load by id on datastore side
+            client.delete(load_key)
 
-        # very inefficent method to search boats and remove load when deleted
-        query = client.query(kind=constants.boats)
-        results = list(query.fetch())
+            # very inefficent method to search boats and remove load when deleted
+            query = client.query(kind=constants.boats)
+            results = list(query.fetch())
 
-        for e in results:
-            e["id"] = e.key.id #boat id
-            # true if list is not empty
-            if e["loads"]:
-                for cargo_item in e["loads"]:
-                    if cargo_item["id"] == load_id:
-                        finder_boat_id = e["id"]
-                        boat_key = client.key(constants.boats, int(finder_boat_id))
-                        edit_boats = client.get(key=boat_key)
-                        edit_boats["loads"].remove({"id": load_id})
-                        client.put(edit_boats)
-                        break
-        #return nothing except 204 status code
-        return ('', 204)
+            for e in results:
+                e["id"] = e.key.id #boat id
+                # true if list is not empty
+                if e["loads"]:
+                    for cargo_item in e["loads"]:
+                        if cargo_item["id"] == load_id:
+                            finder_boat_id = e["id"]
+                            boat_key = client.key(constants.boats, int(finder_boat_id))
+                            edit_boats = client.get(key=boat_key)
+                            edit_boats["loads"].remove({"id": load_id})
+                            client.put(edit_boats)
+                            break
+            #return nothing except 204 status code
+            return ('', 204)
+        else: #else statement for request.accept_mimetype
+            res = make_response(json.dumps(constants.error_unsupported_accept_type))
+            res.mimetype = 'application/json'
+            res.status_code = 406
+            return res
 
     elif request.method == 'PATCH':
         # check to see if application/json is listed in Accept header
         if 'application/json' in request.accept_mimetypes:
-
+            
             load_key = client.key(constants.loads, int(load_id))
             edit_loads = client.get(key=load_key)
 
@@ -288,10 +306,10 @@ def loads_get_delete_patch_put(load_id):
 
             # input validation for keys that passed, not elegant
             for value_check in key_match_list:
-                # check boat name length and value type
+                # check load content, weight, and delivery_date
                 if value_check == 'content':
                     # check content description length and value type
-                    if type(content["name"]) != str:
+                    if type(content["content"]) != str:
                         res = make_response(json.dumps(constants.error_content_desc_type))
                         res.mimetype = 'application/json'
                         res.status_code = 400
@@ -369,7 +387,6 @@ def loads_get_delete_patch_put(load_id):
     elif request.method == 'PUT':
          # check to see if application/json is listed in Accept header
         if 'application/json' in request.accept_mimetypes:
-
             load_key = client.key(constants.loads, int(load_id))
             edit_loads = client.get(key=load_key)
 
