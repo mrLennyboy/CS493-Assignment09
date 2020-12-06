@@ -733,6 +733,15 @@ def boats_loads_put_delete(boat_id, load_id):
                 res.mimetype = 'application/json'
                 res.status_code = 403
                 return res
+            
+            # if authenticated user is not the owner of the boat return 403 and error
+            # authenticated user needs to be owner of boat to be authorize to edit
+            # compare boat ownership id's, owner sub and boat owned by someone else
+            elif owner_sub != boats.get("owner"):
+                res = make_response(json.dumps(constants.error_boat_owner_match))
+                res.mimetype = 'application/json'
+                res.status_code = 403
+                return res
 
             loads.update({"carrier": {"id": boat_id, "name": boats["name"]}})
             # put update loads entity
@@ -782,6 +791,15 @@ def boats_loads_put_delete(boat_id, load_id):
                 res.mimetype = 'application/json'
                 res.status_code = 404
                 return res
+                
+            # if authenticated user is not the owner of the boat return 403 and error
+            # authenticated user needs to be owner of boat to be authorize to edit
+            # compare boat ownership id's, owner sub and boat owned by someone else
+            elif owner_sub != boats.get("owner"):
+                res = make_response(json.dumps(constants.error_boat_owner_match))
+                res.mimetype = 'application/json'
+                res.status_code = 403
+                return res
 
             # if no load id matches in boat cargo then throw error
             # elif 'loads' in boats.keys():
@@ -819,7 +837,7 @@ def boats_loads_put_delete(boat_id, load_id):
             # update the boat info when load removed the boat, input valid at begining
             boats.update({"loads": filtered_list})
             client.put(boats)
-            
+
             res = make_response('')
             res.mimetype = 'application/json'
             res.status_code = 204
