@@ -96,3 +96,6 @@ error_miss_load_boat_del = {"Error": "No load with this load_id is associated wi
 
 # Boat owners do not match
 error_boat_owner_match = {"Error": "Boat owner ID does not match"}
+
+# Load already assigned to a boat, can't delete until load is removed from boat (carrier)
+error_load_already_assigned_boat = {"Error": "The load has already been assigned to a boat, can't edit load removed from the carrier"}

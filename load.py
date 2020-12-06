@@ -236,7 +236,18 @@ def loads_get_delete_patch_put(load_id):
             loads = client.get(key=load_key)
             # if load entity is noneType (id doesn't exist) return error message and status code
             if loads is None:
-                return (json.dumps(constants.error_miss_loadID), 404)
+                res = make_response(json.dumps(constants.error_miss_loadID))
+                res.mimetype = 'application/json'
+                res.status_code = 404
+                return res
+
+            # if load assigned to carrier, 403 error for unauthorized removal (Forbidden)
+            if loads["carrier"] is not None:
+                res = make_response(json.dumps(constants.error_load_already_assigned_boat))
+                res.mimetype = 'application/json'
+                res.status_code = 403
+                return res
+
             # delete load by id on datastore side
             client.delete(load_key)
 
@@ -280,6 +291,13 @@ def loads_get_delete_patch_put(load_id):
                 res = make_response(json.dumps(constants.error_miss_loadID))
                 res.mimetype = 'application/json'
                 res.status_code = 404
+                return res
+
+            # if load assigned to carrier, 403 error for unauthorized removal (Forbidden)
+            if loads["carrier"] is not None:
+                res = make_response(json.dumps(constants.error_load_already_assigned_boat))
+                res.mimetype = 'application/json'
+                res.status_code = 403
                 return res
 
             # check if request is json
@@ -399,6 +417,13 @@ def loads_get_delete_patch_put(load_id):
                 res = make_response(json.dumps(constants.error_miss_loadID))
                 res.mimetype = 'application/json'
                 res.status_code = 404
+                return res
+
+            # if load assigned to carrier, 403 error for unauthorized removal (Forbidden)
+            if edit_loads["carrier"] is not None:
+                res = make_response(json.dumps(constants.error_load_already_assigned_boat))
+                res.mimetype = 'application/json'
+                res.status_code = 403
                 return res
 
             # check if request is json
