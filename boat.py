@@ -152,7 +152,7 @@ def boats_post_get():
             # input validation, check boat name if unique or not <-----
             query = client.query(kind=constants.boats)
             results = list(query.fetch())
-            # print(results)
+ 
             # if results: # if list is empty then false
             for e in results:
                 # if the boat name is already assigned to a boat then return 403 and error
@@ -286,7 +286,7 @@ def boat_id_get_delete_patch_put(boat_id):
             if boats is None:
                 res = make_response(json.dumps(constants.error_miss_bID))
                 res.mimetype = 'application/json'
-                res.status_code = 403
+                res.status_code = 404
                 return res
 
             # compare boat ownership id's
@@ -337,7 +337,7 @@ def boat_id_get_delete_patch_put(boat_id):
             if boats is None:
                 res = make_response(json.dumps({constants.error_miss_bID}))
                 res.mimetype = 'application/json'
-                res.status_code = 403
+                res.status_code = 404
                 return res
 
             # compare boat ownership id's
@@ -397,7 +397,7 @@ def boat_id_get_delete_patch_put(boat_id):
             if edit_boats is None:
                 res = make_response(json.dumps(constants.error_miss_bID))
                 res.mimetype = 'application/json'
-                res.status_code = 403
+                res.status_code = 404
                 return res
 
             # compare boat ownership id's
@@ -561,7 +561,7 @@ def boat_id_get_delete_patch_put(boat_id):
             if edit_boats is None:
                 res = make_response(json.dumps(constants.error_miss_bID))
                 res.mimetype = 'application/json'
-                res.status_code = 403
+                res.status_code = 404
                 return res
 
             # compare boat ownership id's
@@ -746,7 +746,11 @@ def boats_loads_put_delete(boat_id, load_id):
             boats.update({"loads": temp_list})
             # put updated boats entity
             client.put(boats)
-            return ('', 204) #<-------------------- what should response be for PUT, probably the boat with load list
+
+            res = make_response('')
+            res.mimetype = 'application/json'
+            res.status_code = 204
+            return res
         
         else: #else statement for request.accept_mimetype
             res = make_response(json.dumps(constants.error_unsupported_accept_type))
@@ -774,7 +778,6 @@ def boats_loads_put_delete(boat_id, load_id):
 
             # if boats or loads entity doesnt exist return error message and status code
             if loads is None or boats is None:
-                # return (json.dumps(constants.error_miss_load_boat), 404)
                 res = make_response(json.dumps(constants.error_miss_load_boat))
                 res.mimetype = 'application/json'
                 res.status_code = 404
@@ -816,6 +819,7 @@ def boats_loads_put_delete(boat_id, load_id):
             # update the boat info when load removed the boat, input valid at begining
             boats.update({"loads": filtered_list})
             client.put(boats)
+            
             res = make_response('')
             res.mimetype = 'application/json'
             res.status_code = 204

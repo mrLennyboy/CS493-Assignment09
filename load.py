@@ -22,30 +22,30 @@ import client_info
 # know where it's defined, url_prefix will prepend to all URLs associated with the blueprint.
 bp = Blueprint('load', __name__, url_prefix='/loads')
 
-def get_sub_info():
-        # get sub info from JWT, owner of boat
-    if 'Authorization' in request.headers:
-        user_jwt = request.headers['Authorization']
-        user_jwt = user_jwt.replace("Bearer ", "")
-        req = requests.Request()
+# def get_sub_info():
+#         # get sub info from JWT, owner of boat
+#     if 'Authorization' in request.headers:
+#         user_jwt = request.headers['Authorization']
+#         user_jwt = user_jwt.replace("Bearer ", "")
+#         req = requests.Request()
 
-        try:
-            id_info = id_token.verify_oauth2_token( 
-                user_jwt, req, client_info.CLIENT_ID)
-            user_sub = id_info['sub']
-            return user_sub
-        except:
-            return "Error: JWT is invalid"
-    else:
-        return "Error: No Authorization in request header"
+#         try:
+#             id_info = id_token.verify_oauth2_token( 
+#                 user_jwt, req, client_info.CLIENT_ID)
+#             user_sub = id_info['sub']
+#             return user_sub
+#         except:
+#             return "Error: JWT is invalid"
+#     else:
+#         return "Error: No Authorization in request header"
 
-def get_sub_valid(sub_info):
-    if sub_info == "Error: No Authorization in request header":
-        return False
-    elif sub_info == "Error: JWT is invalid":
-        return False
-    else:
-        return True
+# def get_sub_valid(sub_info):
+#     if sub_info == "Error: No Authorization in request header":
+#         return False
+#     elif sub_info == "Error: JWT is invalid":
+#         return False
+#     else:
+#         return True
 
 @bp.route('', methods=['POST','GET'])
 def loads_post_get():
@@ -256,8 +256,12 @@ def loads_get_delete_patch_put(load_id):
                             edit_boats["loads"].remove({"id": load_id})
                             client.put(edit_boats)
                             break
-            #return nothing except 204 status code
-            return ('', 204)
+            # #return nothing except 204 status code
+            # return ('', 204)
+            res = make_response('')
+            res.mimetype = 'application/json'
+            res.status_code = 204
+            return res
         else: #else statement for request.accept_mimetype
             res = make_response(json.dumps(constants.error_unsupported_accept_type))
             res.mimetype = 'application/json'
@@ -370,12 +374,12 @@ def loads_get_delete_patch_put(load_id):
             # res = make_response(json.dumps(edit_loads))
             # res.mimetype = 'application/json'
             # res.status_code = 200
+            # return res
             res = make_response('')
             res.mimetype = 'application/json'
             res.status_code = 204
             return res
 
-            return res
 
         else: #else statement for request.accept_mimetype text/html type
             # return "This client doesn't accept application/json" as text/html
