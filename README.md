@@ -1,8 +1,6 @@
-Final project for Cloud Application Development course.
+# Final project for Cloud Application Development course.
 
-# Social Playlist Web Application
-
-This is an Agile XP Project built for CS361: Software Engineering W2020. 
+This is the final project for CS493: Cloud Application Development F2020. 
 
 ## Project Idea:
 
